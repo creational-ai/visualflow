@@ -94,7 +94,7 @@ We have three layout engines, ascii-dag's sophisticated edge routing logic, and 
 
 **Deliverables**:
 ```
-diagram/
+visualflow/
 ├── tests/
 │   ├── conftest.py              # Shared fixtures (graph scenarios)
 │   ├── test_grandalf.py         # Grandalf tests
@@ -156,7 +156,7 @@ diagram/
 
 **Deliverables**:
 ```
-diagram/
+visualflow/
 ├── src/
 │   └── visualflow/              # PyPI package name
 │       ├── __init__.py
@@ -198,6 +198,10 @@ diagram/
 - Adapter layer for Mission Control's `list_tasks` (separate from core lib)
 - End-to-end validation with real MC data
 - Documentation for open-source release
+- **Unicode edge characters** - rich box-drawing for smoother routing:
+  - Rounded corners: `╭`, `╮`, `╰`, `╯`
+  - Arrows: `→`, `←`, `↑`, `↓`, `▶`, `▼`
+  - Optional line styles: single (`│─`), double (`║═`), rounded
 
 **Library Interface** (generic, not MC-specific):
 ```python
@@ -238,7 +242,7 @@ diagram = from_tasks(tasks, milestone_filter="core")
 
 **Deliverables**:
 ```
-diagram/
+visualflow/
 ├── src/
 │   └── visualflow/              # PyPI package name
 │       ├── __init__.py          # Public API

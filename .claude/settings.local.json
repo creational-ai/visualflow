@@ -9,7 +9,23 @@
       "Bash(git init:*)",
       "Bash(git remote add:*)",
       "Bash(git add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Skill(mc-init)",
+      "mcp__mission-control__search_projects",
+      "mcp__mission-control__list_milestones",
+      "mcp__mission-control__get_milestone",
+      "mcp__mission-control__list_tasks",
+      "mcp__mission-control__complete_task",
+      "mcp__mission-control__update_task",
+      "mcp__mission-control__get_task",
+      "mcp__mission-control__update_milestone",
+      "mcp__mission-control__get_project",
+      "Bash(pytest:*)",
+      "Bash(uv run python:*)",
+      "Bash(dot:*)",
+      "Skill(dev-lessons)"
     ]
   }
 }

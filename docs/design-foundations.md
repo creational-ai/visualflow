@@ -442,7 +442,7 @@ From visual-poc-design.md:
 ## File Structure for PoC 1
 
 ```
-diagram/
+visualflow/
 ├── src/
 │   └── visualflow/
 │       ├── __init__.py          # Public API

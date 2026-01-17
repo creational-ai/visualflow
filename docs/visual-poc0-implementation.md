@@ -43,7 +43,7 @@ Complete these BEFORE starting implementation steps.
 **Baseline verification**:
 ```bash
 # No existing tests - this creates the test infrastructure
-cd /Users/docchang/Development/Mission\ Control/diagram && ls tests/ 2>/dev/null || echo "tests/ directory does not exist yet"
+cd /Users/docchang/Development/visualflow && ls tests/ 2>/dev/null || echo "tests/ directory does not exist yet"
 ```
 
 ### 2. Verify Dependencies Installed
@@ -58,10 +58,10 @@ cd /Users/docchang/Development/Mission\ Control/diagram && ls tests/ 2>/dev/null
 **Commands**:
 ```bash
 # Verify Grandalf
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run python -c "from grandalf.graphs import Graph, Vertex, Edge; from grandalf.layouts import SugiyamaLayout; print('Grandalf OK')"
+cd /Users/docchang/Development/visualflow && uv run python -c "from grandalf.graphs import Graph, Vertex, Edge; from grandalf.layouts import SugiyamaLayout; print('Grandalf OK')"
 
 # Verify ascii-dag compiled
-ls /Users/docchang/Development/Mission\ Control/diagram/ascii-dag/target/release/examples/basic
+ls /Users/docchang/Development/Mission\ Control/visualflow/ascii-dag/target/release/examples/basic
 
 # Verify Graphviz
 which dot && dot -V
@@ -70,8 +70,8 @@ which dot && dot -V
 **Verification** (inline OK for prerequisites):
 ```bash
 # All three checks should pass
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run python -c "from grandalf.graphs import Graph; print('Grandalf: OK')"
-test -f /Users/docchang/Development/Mission\ Control/diagram/ascii-dag/target/release/examples/basic && echo "ascii-dag: OK"
+cd /Users/docchang/Development/visualflow && uv run python -c "from grandalf.graphs import Graph; print('Grandalf: OK')"
+test -f /Users/docchang/Development/Mission\ Control/visualflow/ascii-dag/target/release/examples/basic && echo "ascii-dag: OK"
 which dot > /dev/null && echo "Graphviz: OK"
 # Expected: All three print OK
 ```
@@ -86,12 +86,12 @@ which dot > /dev/null && echo "Graphviz: OK"
 
 **Commands**:
 ```bash
-mkdir -p /Users/docchang/Development/Mission\ Control/diagram/tests
+mkdir -p /Users/docchang/Development/visualflow/tests
 ```
 
 **Verification**:
 ```bash
-ls -la /Users/docchang/Development/Mission\ Control/diagram/tests/
+ls -la /Users/docchang/Development/visualflow/tests/
 # Expected: Empty directory exists
 ```
 
@@ -113,7 +113,7 @@ From `docs/visual-poc0-overview.md`:
 
 ### File Structure
 ```
-diagram/
+visualflow/
 ├── pyproject.toml               # name = "visualflow"
 ├── src/
 │   └── visualflow/              # PyPI package (expanded in PoC 1)
@@ -154,7 +154,7 @@ diagram/
 - [ ] Add fixtures: `simple_chain`, `diamond`, `multiple_roots`
 - [ ] Verify fixtures can be collected
 
-**Code** (create `/Users/docchang/Development/Mission Control/diagram/tests/conftest.py`):
+**Code** (create `/Users/docchang/Development/visualflow/tests/conftest.py`):
 ```python
 """Shared fixtures for layout engine evaluation tests."""
 
@@ -254,7 +254,7 @@ def multiple_roots() -> TestGraph:
 
 **Verification** (inline OK for Step 0):
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/conftest.py --collect-only 2>&1 | head -20
+cd /Users/docchang/Development/visualflow && uv run pytest tests/conftest.py --collect-only 2>&1 | head -20
 # Expected: Shows fixtures collected (simple_chain, diamond, multiple_roots)
 ```
 
@@ -273,7 +273,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/c
 - [ ] Add `complex_graph` fixture (scenario 7)
 - [ ] Write validation test for all fixtures
 
-**Code** (append to `/Users/docchang/Development/Mission Control/diagram/tests/conftest.py`):
+**Code** (append to `/Users/docchang/Development/visualflow/tests/conftest.py`):
 ```python
 # =============================================================================
 # Scenario 4: Skip-Level (A -> B -> C, A -> C direct)
@@ -409,7 +409,7 @@ def all_scenarios(
     ]
 ```
 
-**Tests** (create `/Users/docchang/Development/Mission Control/diagram/tests/test_fixtures.py`):
+**Tests** (create `/Users/docchang/Development/visualflow/tests/test_fixtures.py`):
 ```python
 """Tests to validate fixture infrastructure."""
 
@@ -485,7 +485,7 @@ class TestFixtureValidation:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_fixtures.py -v
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_fixtures.py -v
 ```
 
 **Output**: 10/10 tests passing
@@ -501,7 +501,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test simple_chain, diamond, multiple_roots scenarios
 - [ ] Document coordinate output format
 
-**Code** (create `/Users/docchang/Development/Mission Control/diagram/tests/test_grandalf.py`):
+**Code** (create `/Users/docchang/Development/visualflow/tests/test_grandalf.py`):
 ```python
 """Grandalf layout engine evaluation tests.
 
@@ -679,7 +679,7 @@ class TestGrandalfBasicScenarios:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_grandalf.py -v
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_grandalf.py -v
 ```
 
 **Output**: 9/9 tests passing
@@ -695,7 +695,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test custom node dimensions
 - [ ] Document edge routing (or lack thereof)
 
-**Code** (append to `/Users/docchang/Development/Mission Control/diagram/tests/test_grandalf.py`):
+**Code** (append to `/Users/docchang/Development/visualflow/tests/test_grandalf.py`):
 ```python
 class TestGrandalfAdvancedScenarios:
     """Test Grandalf with advanced scenarios (4-7)."""
@@ -858,7 +858,7 @@ class TestGrandalfCapabilities:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_grandalf.py -v
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_grandalf.py -v
 ```
 
 **Output**: 18/18 tests passing
@@ -874,7 +874,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test simple_chain, diamond, multiple_roots scenarios
 - [ ] Document coordinate system and output format
 
-**Code** (create `/Users/docchang/Development/Mission Control/diagram/tests/test_graphviz.py`):
+**Code** (create `/Users/docchang/Development/visualflow/tests/test_graphviz.py`):
 ```python
 """Graphviz layout engine evaluation tests.
 
@@ -1128,7 +1128,7 @@ class TestGraphvizBasicScenarios:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_graphviz.py -v
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_graphviz.py -v
 ```
 
 **Output**: 9/9 tests passing
@@ -1144,7 +1144,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test custom node dimensions
 - [ ] Document edge spline points
 
-**Code** (append to `/Users/docchang/Development/Mission Control/diagram/tests/test_graphviz.py`):
+**Code** (append to `/Users/docchang/Development/visualflow/tests/test_graphviz.py`):
 ```python
 class TestGraphvizAdvancedScenarios:
     """Test Graphviz with advanced scenarios (4-7)."""
@@ -1277,7 +1277,7 @@ class TestGraphvizCapabilities:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_graphviz.py -v
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_graphviz.py -v
 ```
 
 **Output**: 17/17 tests passing (9 basic + 8 advanced/capabilities)
@@ -1293,7 +1293,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test existing `basic` example
 - [ ] Document output format and integration complexity
 
-**Code** (create `/Users/docchang/Development/Mission Control/diagram/tests/test_ascii_dag.py`):
+**Code** (create `/Users/docchang/Development/visualflow/tests/test_ascii_dag.py`):
 ```python
 """ascii-dag layout engine evaluation tests.
 
@@ -1495,7 +1495,7 @@ class TestAsciiDagIntegrationComplexity:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_ascii_dag.py -v -s
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_ascii_dag.py -v -s
 ```
 
 **Output**: 8/8 tests passing (with visual output for inspection)
@@ -1511,7 +1511,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 - [ ] Test edge routing examples if available
 - [ ] Compile additional examples if needed
 
-**Code** (append to `/Users/docchang/Development/Mission Control/diagram/tests/test_ascii_dag.py`):
+**Code** (append to `/Users/docchang/Development/visualflow/tests/test_ascii_dag.py`):
 ```python
 class TestAsciiDagAdditionalExamples:
     """Test additional ascii-dag examples if available."""
@@ -1638,7 +1638,7 @@ class TestAsciiDagUniqueValue:
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/test_ascii_dag.py -v -s
+cd /Users/docchang/Development/visualflow && uv run pytest tests/test_ascii_dag.py -v -s
 ```
 
 **Output**: All ascii-dag tests passing
@@ -1656,7 +1656,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/t
 
 **Verification**:
 ```bash
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/ -v --tb=short
+cd /Users/docchang/Development/visualflow && uv run pytest tests/ -v --tb=short
 ```
 
 **Expected Output**: All tests passing
@@ -1674,7 +1674,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/ 
 - [ ] Calculate value vs. complexity scores
 - [ ] Make engine selection recommendation
 
-**Code** (create `/Users/docchang/Development/Mission Control/diagram/docs/poc0-comparison-matrix.md`):
+**Code** (create `/Users/docchang/Development/visualflow/docs/poc0-comparison-matrix.md`):
 ```markdown
 # PoC 0 Comparison Matrix
 
@@ -1753,7 +1753,7 @@ cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/ 
 
 **Verification**:
 ```bash
-ls -la /Users/docchang/Development/Mission\ Control/diagram/docs/poc0-comparison-matrix.md
+ls -la /Users/docchang/Development/visualflow/docs/poc0-comparison-matrix.md
 # Expected: File exists
 ```
 
@@ -1796,15 +1796,15 @@ Before marking PoC complete, verify:
 
 ```bash
 # 1. All tests pass
-cd /Users/docchang/Development/Mission\ Control/diagram && uv run pytest tests/ -v --tb=short
+cd /Users/docchang/Development/visualflow && uv run pytest tests/ -v --tb=short
 # Expected: All pass (~61 tests)
 
 # 2. Comparison matrix document exists
-cat /Users/docchang/Development/Mission\ Control/diagram/docs/poc0-comparison-matrix.md
+cat /Users/docchang/Development/visualflow/docs/poc0-comparison-matrix.md
 # Expected: Document with findings
 
 # 3. Decision made: which engine(s) to use
-grep "Answer:" /Users/docchang/Development/Mission\ Control/diagram/docs/poc0-comparison-matrix.md
+grep "Answer:" /Users/docchang/Development/visualflow/docs/poc0-comparison-matrix.md
 # Expected: Clear answer with rationale
 ```
 

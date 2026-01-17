@@ -15,6 +15,7 @@
 2. **Pluggable design**: Easy to swap or combine engines
 3. **Real data validation**: Test with actual Mission Control task data
 4. **Iterate to flawless**: Start simple, refine until diagrams look hand-crafted
+5. **Unicode-ready**: Design for future Unicode support (emojis in content, rich box-drawing characters for edges)
 
 ---
 
@@ -24,7 +25,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                        Public API                            │
 │                                                              │
-│   render(dag) -> str       DAG.add_node() / add_edge()      │
+│   render_dag(dag) -> str   DAG.add_node() / add_edge()      │
 └──────────────────────────────┬──────────────────────────────┘
                                │
                                ▼
@@ -95,40 +96,39 @@
 ```python
 # src/visualflow/models.py
 
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field, computed_field
 
-@dataclass
-class Node:
+class Node(BaseModel):
     """A node in the DAG.
 
     The `content` field is the COMPLETE box from task's `diagram` field,
-    including borders. Width and height are measured directly from content.
+    including borders. Width and height are computed from content.
     """
     id: str
     content: str          # Complete box with borders (from task.diagram)
 
+    @computed_field
     @property
     def width(self) -> int:
         """Box width = length of first line."""
         lines = self.content.split('\n')
         return len(lines[0]) if lines else 0
 
+    @computed_field
     @property
     def height(self) -> int:
         """Box height = number of lines."""
         return len(self.content.split('\n'))
 
-@dataclass
-class Edge:
+class Edge(BaseModel):
     """A directed edge between nodes."""
     source: str
     target: str
 
-@dataclass
-class DAG:
+class DAG(BaseModel):
     """Directed Acyclic Graph."""
-    nodes: dict[str, Node] = field(default_factory=dict)
-    edges: list[Edge] = field(default_factory=list)
+    nodes: dict[str, Node] = Field(default_factory=dict)
+    edges: list[Edge] = Field(default_factory=list)
 
     def add_node(self, id: str, content: str) -> None:
         self.nodes[id] = Node(id=id, content=content)
@@ -136,26 +136,23 @@ class DAG:
     def add_edge(self, source: str, target: str) -> None:
         self.edges.append(Edge(source=source, target=target))
 
-@dataclass
-class NodePosition:
+class NodePosition(BaseModel):
     """Computed position for a node."""
     node: Node
     x: int      # Left edge (characters)
     y: int      # Top edge (lines)
 
-@dataclass
-class LayoutResult:
+class LayoutResult(BaseModel):
     """Layout engine output."""
     positions: dict[str, NodePosition]
     width: int
     height: int
 
-@dataclass
-class EdgePath:
+class EdgePath(BaseModel):
     """Computed path for an edge."""
     source_id: str
     target_id: str
-    segments: list[tuple[int, int, int, int]]  # (x1, y1, x2, y2)
+    segments: list[tuple[int, int, int, int]] = Field(default_factory=list)  # (x1, y1, x2, y2)
 ```
 
 ---
@@ -432,9 +429,9 @@ dag = from_tasks(tasks)
 ### Step 3: Render
 
 ```python
-from visualflow import render
+from visualflow import render_dag
 
-output = render(dag)
+output = render_dag(dag)
 print(output)
 ```
 
@@ -900,7 +897,7 @@ def add_exit_connector(box_content: str) -> str:
 ## File Structure
 
 ```
-diagram/
+visualflow/
 ├── pyproject.toml
 ├── src/
 │   └── visualflow/
@@ -973,7 +970,7 @@ diagram/
 
 | Step | Deliverable | Tests |
 |------|-------------|-------|
-| 10 | `render()` function | test_render.py |
+| 10 | `render_dag()` function | test_render.py |
 | 11 | MC adapter `from_tasks()` | test_mc_adapter.py |
 | 12 | Polish and quality iteration | all 7 fixtures flawless |
 
@@ -1022,6 +1019,36 @@ At each phase, we evaluate and decide:
 2. **Real data**: All fixtures derived from actual Mission Control tasks
 3. **Edge cases covered**: Merge, branch, standalone, skip-level all designed in
 4. **Quality first**: Every diagram must look hand-crafted
+
+---
+
+## Unicode Support
+
+### PoC 1: Emoji/Wide Character Width (Implemented)
+
+Node content may contain emojis and CJK characters that occupy 2 terminal columns:
+- Uses `wcwidth` library for accurate width calculation
+- `Node.width` property handles wide characters correctly
+- Falls back to `len()` for non-printable characters
+
+### PoC 2: Rich Edge Characters (Planned)
+
+The initial implementation uses basic ASCII characters for edge routing. PoC 2 will add:
+
+**Rich Box-Drawing Characters**
+- Smooth corners: `╭`, `╮`, `╰`, `╯`
+- Rounded connections for cleaner visual flow
+- Thicker lines for emphasis: `┃`, `━`, `┏`, `┓`
+
+**Edge Line Styles**
+- Single: `│`, `─`, `┌`, `┐`, `└`, `┘`
+- Double: `║`, `═`, `╔`, `╗`, `╚`, `╝`
+- Rounded: `╭`, `╮`, `╰`, `╯`
+- Arrows: `→`, `←`, `↑`, `↓`, `▶`, `▼`
+
+**Implementation Notes**
+- Consider a `RenderStyle` enum or config for line style selection
+- Test rendering across different terminal emulators
 
 ---
 

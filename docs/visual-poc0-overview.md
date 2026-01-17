@@ -37,12 +37,12 @@ dependencies = [
 
 **2. ascii-dag (Rust)**
 - Rust library with Sugiyama algorithm + sophisticated edge routing
-- Cloned to `diagram/ascii-dag/`, compiled with `cargo build --release`
+- Cloned to `visualflow/ascii-dag/`, compiled with `cargo build --release`
 - Requires subprocess or FFI bridge for Python integration
 - Has Layout IR with `LayoutNode`, `LayoutEdge`, and `EdgePath` types
 
 ```
-diagram/ascii-dag/
+visualflow/ascii-dag/
 ├── src/
 │   ├── graph.rs       # DAG structure
 │   ├── layout.rs      # Sugiyama algorithm
@@ -75,7 +75,7 @@ dot -V     # Shows version
 ### Desired State (PoC 0 Deliverables)
 
 ```
-diagram/
+visualflow/
 ├── pyproject.toml              # name = "visualflow"
 ├── src/
 │   └── visualflow/             # Package (expanded in PoC 1)

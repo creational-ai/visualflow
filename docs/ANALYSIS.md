@@ -244,7 +244,7 @@ Or compile to WASM and call from Python via `wasmtime`.
 ### Phase 2: Python Layout Processor
 
 ```python
-# diagram/layout_engine.py
+# visualflow/layout_engine.py
 
 def compute_layout(tasks: list[Task]) -> LayoutResult:
     """Use ascii-dag to compute positions, then scale for boxes."""
@@ -277,7 +277,7 @@ def compute_layout(tasks: list[Task]) -> LayoutResult:
 ### Phase 3: ASCII Box Renderer
 
 ```python
-# diagram/renderer.py
+# visualflow/renderer.py
 
 def render_diagram(layout: LayoutResult, tasks: list[Task]) -> str:
     """Render boxes and edges on ASCII canvas."""
@@ -355,7 +355,7 @@ via (5,3)                 │
 ## Files
 
 ```
-diagram/
+visualflow/
 ├── ascii-dag/          # Cloned repository
 ├── ANALYSIS.md         # This document
 ├── layout_engine.py    # Python wrapper (TBD)

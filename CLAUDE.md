@@ -8,21 +8,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
+Package manager: `uv` - **always use `uv run` prefix for commands**
+
 ```bash
 # Run all tests
-pytest tests/
+uv run pytest tests/
 
 # Run with coverage
-pytest --cov=src tests/
+uv run pytest --cov=src tests/
 
 # Run specific test file
-pytest tests/test_grandalf.py
+uv run pytest tests/test_grandalf.py
 
 # Run tests matching pattern
-pytest tests/ -k simple_chain
-```
+uv run pytest tests/ -k simple_chain
 
-Package manager: `uv`
+# Sync dependencies
+uv sync --all-extras
+```
 
 ## Architecture
 
@@ -94,3 +97,26 @@ sug.draw()
 ```
 
 Grandalf does NOT provide edge routing - must compute separately.
+
+## Unicode Support
+
+- **PoC 1**: Emoji/wide character width - uses `wcwidth` for accurate width calculation in `Node.width`
+- **PoC 2**: Rich edge characters - rounded corners (`╭╮╰╯`), double lines (`║═`), arrows (`→▼`)
+
+See `docs/architecture.md` for details.
+
+---
+
+## Mission Control Integration
+
+**This project is the `visual` milestone under Mission Control.**
+
+When using Mission Control MCP tools (`mcp__mission-control__*`) to manage tasks, milestones, or project status, you are acting as the **PM (Project Manager) role**. Read these docs to understand the workflow, timestamp conventions, and scope:
+
+- **Project Slug:** `mission-control`
+- **Milestone Slug:** `visual`
+- **Role:** PM (Project Manager)
+- **Read 1st:** [PM_GUIDE.md](file:///Users/docchang/Development/Mission%20Control/docs/PM_GUIDE.md)
+- **Read 2nd:** [MCP_TOOLS_REFERENCE.md](file:///Users/docchang/Development/Mission%20Control/docs/MCP_TOOLS_REFERENCE.md)
+
+---

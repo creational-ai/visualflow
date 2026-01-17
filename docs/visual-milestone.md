@@ -2,7 +2,7 @@
 
 **Status**: Planning
 **Project**: Mission Control
-**Location**: `diagram/`
+**Location**: `visualflow/`
 
 ---
 
@@ -479,7 +479,7 @@ def generate_diagram(
 ## Next Steps
 
 **Immediate** (PoC0 - Exploration):
-1. Create pytest structure in `diagram/tests/`
+1. Create pytest structure in `visualflow/tests/`
 2. Write test scenarios for Grandalf
 3. Write same scenarios for ascii-dag
 4. Write same scenarios for Graphviz
@@ -510,7 +510,7 @@ def generate_diagram(
 ## File Structure
 
 ```
-diagram/
+visualflow/
 ├── pyproject.toml          # uv project config (name = "visualflow")
 ├── .venv/                   # Python environment
 ├── ascii-dag/               # Cloned Rust library (reference)

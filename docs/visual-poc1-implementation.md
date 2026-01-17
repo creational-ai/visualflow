@@ -43,7 +43,7 @@ Complete these BEFORE starting implementation steps.
 
 **Baseline verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_grandalf.py tests/test_graphviz.py tests/test_fixtures.py -v --tb=short
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_grandalf.py tests/test_graphviz.py tests/test_fixtures.py -v --tb=short
 # Expected: All pass (establishes baseline for existing tests)
 ```
 
@@ -58,12 +58,12 @@ cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/
 **Commands**:
 ```bash
 # Add pydantic>=2.0 to pyproject.toml dependencies section, then:
-cd "/Users/docchang/Development/Mission Control/diagram" && uv sync
+cd "/Users/docchang/Development/visualflow" && uv sync
 ```
 
 **Verification** (inline OK for prerequisites):
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "from pydantic import BaseModel; print('Pydantic OK')"
+cd "/Users/docchang/Development/visualflow" && uv run python -c "from pydantic import BaseModel; print('Pydantic OK')"
 # Expected: "Pydantic OK"
 ```
 
@@ -78,7 +78,7 @@ cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "fr
 **Commands**:
 ```bash
 # Verify Grandalf is importable
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "import grandalf; print('Grandalf OK')"
+cd "/Users/docchang/Development/visualflow" && uv run python -c "import grandalf; print('Grandalf OK')"
 
 # Verify Graphviz is installed
 which dot && dot -V
@@ -86,7 +86,7 @@ which dot && dot -V
 
 **Verification** (inline OK for prerequisites):
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "from grandalf.graphs import Graph; print('Grandalf import OK')"
+cd "/Users/docchang/Development/visualflow" && uv run python -c "from grandalf.graphs import Graph; print('Grandalf import OK')"
 # Expected: "Grandalf import OK"
 ```
 
@@ -96,7 +96,7 @@ cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "fr
 
 **Current structure** (after Prerequisites completed):
 ```
-diagram/
+visualflow/
 ├── pyproject.toml          # Has grandalf>=0.8, pydantic>=2.0, pytest (dev)
 ├── src/
 │   └── visualflow/
@@ -133,7 +133,7 @@ From `docs/architecture.md`:
 
 ### File Structure
 ```
-diagram/
+visualflow/
 ├── src/
 │   └── visualflow/
 │       ├── __init__.py           # Public API exports
@@ -188,7 +188,7 @@ diagram/
 
 **Code**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram"
+cd "/Users/docchang/Development/visualflow"
 
 # Create directories
 mkdir -p src/visualflow/engines
@@ -203,7 +203,7 @@ touch tests/fixtures/__init__.py
 
 **Verification** (inline OK for Step 0):
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && ls -la src/visualflow/engines/ src/visualflow/render/ tests/fixtures/
+cd "/Users/docchang/Development/visualflow" && ls -la src/visualflow/engines/ src/visualflow/render/ tests/fixtures/
 # Expected: Shows directories with __init__.py files
 ```
 
@@ -232,6 +232,7 @@ All data structures use Pydantic BaseModel with strong typing and built-in valid
 """
 
 from pydantic import BaseModel, Field, computed_field
+from wcwidth import wcswidth
 
 
 class Node(BaseModel):
@@ -239,6 +240,10 @@ class Node(BaseModel):
 
     The `content` field is the COMPLETE box from task's `diagram` field,
     including borders. Width and height are computed from content.
+
+    Note:
+        Width calculation uses wcwidth to correctly handle wide characters
+        (emoji, CJK) which may occupy 2 terminal columns.
     """
 
     id: str
@@ -247,9 +252,16 @@ class Node(BaseModel):
     @computed_field
     @property
     def width(self) -> int:
-        """Box width = length of first line."""
+        """Box width accounting for wide characters (emoji, CJK).
+
+        Uses wcswidth for accurate terminal column count.
+        Falls back to len() if wcswidth returns -1 (non-printable chars).
+        """
         lines = self.content.split("\n")
-        return len(lines[0]) if lines else 0
+        if not lines:
+            return 0
+        w = wcswidth(lines[0])
+        return w if w >= 0 else len(lines[0])
 
     @computed_field
     @property
@@ -368,6 +380,19 @@ class TestNode:
         assert node.width == 12
         assert node.height == 3
 
+    def test_node_width_with_emoji(self) -> None:
+        """Width correctly counts emoji as 2 columns."""
+        # Emoji typically occupy 2 terminal columns
+        node = Node(id="test", content="Hello 🎉 World")
+        # "Hello " (6) + "🎉" (2) + " World" (6) = 14 columns
+        assert node.width == 14
+
+    def test_node_width_with_cjk(self) -> None:
+        """Width correctly counts CJK characters as 2 columns."""
+        node = Node(id="test", content="Hello 世界")
+        # "Hello " (6) + "世" (2) + "界" (2) = 10 columns
+        assert node.width == 10
+
 
 class TestEdge:
     """Tests for Edge model."""
@@ -484,7 +509,7 @@ class TestEdgePath:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_models.py -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_models.py -v
 ```
 
 **Output**: 18/18 tests passing
@@ -590,7 +615,7 @@ class TestLayoutEngineProtocol:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_engines.py::TestLayoutEngineProtocol -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_engines.py::TestLayoutEngineProtocol -v
 ```
 
 **Output**: 2/2 tests passing
@@ -860,7 +885,7 @@ class TestCanvasRender:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_canvas.py -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_canvas.py -v
 ```
 
 **Output**: 14/14 tests passing
@@ -1358,7 +1383,7 @@ class TestComplexGraphFixture:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_new_fixtures.py -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_new_fixtures.py -v
 ```
 
 **Output**: 14/14 tests passing
@@ -1828,7 +1853,7 @@ class TestGrandalfEngineNoOverlap:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_engines.py -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_engines.py -v
 ```
 
 **Output**: ~20 tests passing
@@ -1877,6 +1902,11 @@ class GraphvizEngine:
 
     Converts DAG to DOT format, runs Graphviz, parses output,
     and converts positions to character coordinates.
+
+    Note:
+        Node IDs should be alphanumeric (letters, numbers, underscores).
+        Hyphens are automatically converted to underscores for DOT compatibility.
+        Other special characters may cause parsing issues.
     """
 
     # Conversion factor: characters per inch (width)
@@ -2236,7 +2266,7 @@ class TestGraphvizEngineNoOverlap:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_engines.py -v
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_engines.py -v
 ```
 
 **Output**: ~30 tests passing
@@ -2468,7 +2498,7 @@ class TestVisualInspection:
 
 **Verification**:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_integration.py -v -s
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_integration.py -v -s
 ```
 
 **Output**: ~15 tests passing, visual output printed for inspection
@@ -2516,15 +2546,15 @@ Before marking PoC complete, verify:
 
 ```bash
 # 1. All tests pass
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_models.py tests/test_canvas.py tests/test_engines.py tests/test_new_fixtures.py tests/test_integration.py -v --tb=short
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_models.py tests/test_canvas.py tests/test_engines.py tests/test_new_fixtures.py tests/test_integration.py -v --tb=short
 # Expected: All pass (~91 tests)
 
 # 2. Visual inspection shows positioned boxes
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run pytest tests/test_integration.py::TestVisualInspection -v -s
+cd "/Users/docchang/Development/visualflow" && uv run pytest tests/test_integration.py::TestVisualInspection -v -s
 # Expected: ASCII diagrams printed showing boxes in correct positions
 
 # 3. render_dag works via Python
-cd "/Users/docchang/Development/Mission Control/diagram" && uv run python -c "
+cd "/Users/docchang/Development/visualflow" && uv run python -c "
 from visualflow import render_dag, DAG
 dag = DAG()
 dag.add_node('a', '+-----+\n|  A  |\n+-----+')
@@ -2568,12 +2598,13 @@ print(render_dag(dag))
 
 ## Dependencies
 
-Update `pyproject.toml` to add Pydantic:
+Update `pyproject.toml` to add Pydantic and wcwidth:
 
 ```toml
 dependencies = [
     "grandalf>=0.8",
-    "pydantic>=2.0",  # Add for data models with validation
+    "pydantic>=2.0",  # Data models with validation
+    "wcwidth>=0.2",   # Unicode width calculation (emoji, CJK)
 ]
 
 [project.optional-dependencies]
@@ -2585,7 +2616,7 @@ dev = [
 
 Then run:
 ```bash
-cd "/Users/docchang/Development/Mission Control/diagram" && uv sync
+cd "/Users/docchang/Development/visualflow" && uv sync
 ```
 
 ---

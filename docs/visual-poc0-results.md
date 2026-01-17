@@ -606,7 +606,7 @@ tests/test_ascii_dag.py::TestAsciiDagUniqueValue::test_no_coordinate_transformat
 $ uv run pytest tests/ -v --tb=short
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
-rootdir: /Users/docchang/Development/Mission Control/diagram
+rootdir: /Users/docchang/Development/visualflow
 configfile: pyproject.toml
 plugins: cov-7.0.0
 collected 66 items
