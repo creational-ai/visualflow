@@ -55,6 +55,9 @@ def render_dag(
         for path in paths:
             canvas.draw_edge(path)
 
+        # Fix junction characters based on actual neighbors
+        canvas.fix_junctions()
+
     return canvas.render()
 
 

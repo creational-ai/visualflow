@@ -454,3 +454,88 @@ class Canvas(BaseModel):
         # Three or more - distribute evenly
         spacing = usable_width // (num_exits - 1)
         return [box_left + spacing * i for i in range(num_exits)]
+
+    def fix_junctions(self) -> None:
+        """Fix junction characters based on actual neighbors.
+
+        After all edges are drawn, scan for junction/corner characters
+        and verify they match their neighbors. This handles cases where
+        multiple paths overlap and the correct junction wasn't determined
+        during incremental drawing.
+
+        Characters that connect in each direction:
+        - Has DOWN: | ┌ ┐ ├ ┤ ┬ ┼ v
+        - Has UP: | └ ┘ ├ ┤ ┴ ┼
+        - Has RIGHT: - ┌ └ ├ ┬ ┴ ┼
+        - Has LEFT: - ┐ ┘ ┤ ┬ ┴ ┼
+        """
+        # Characters that have lines going in each direction
+        has_down = set("|┌┐├┤┬┼v")
+        has_up = set("|└┘├┤┴┼")
+        has_right = set("-┌└├┬┴┼")
+        has_left = set("-┐┘┤┬┴┼")
+
+        # Characters that are junctions/corners (candidates for fixing)
+        junction_chars = set("┌┐└┘┬┴├┤┼")
+
+        # Scan for junctions that might need fixing
+        for y in range(self.height):
+            for x in range(self.width):
+                char = self._grid[y][x]
+                if char not in junction_chars:
+                    continue
+
+                # Check each neighbor direction
+                up = self._grid[y - 1][x] in has_down if y > 0 else False
+                down = self._grid[y + 1][x] in has_up if y < self.height - 1 else False
+                left = self._grid[y][x - 1] in has_right if x > 0 else False
+                right = self._grid[y][x + 1] in has_left if x < self.width - 1 else False
+
+                # Determine correct character based on connections
+                new_char = self._junction_for_directions(up, down, left, right)
+                if new_char and new_char != char:
+                    self._grid[y][x] = new_char
+
+    def _junction_for_directions(
+        self, up: bool, down: bool, left: bool, right: bool
+    ) -> str | None:
+        """Get the correct junction character for given directions.
+
+        Args:
+            up: Has connection going up
+            down: Has connection going down
+            left: Has connection going left
+            right: Has connection going right
+
+        Returns:
+            Correct junction character, or None if no valid junction
+        """
+        # Count connections
+        count = sum([up, down, left, right])
+
+        if count == 4:
+            return "┼"
+        elif count == 3:
+            if not up:
+                return "┬"  # down + left + right
+            elif not down:
+                return "┴"  # up + left + right
+            elif not left:
+                return "├"  # up + down + right
+            else:  # not right
+                return "┤"  # up + down + left
+        elif count == 2:
+            if up and down:
+                return None  # Just a vertical line, not a junction
+            elif left and right:
+                return None  # Just a horizontal line, not a junction
+            elif up and left:
+                return "┘"
+            elif up and right:
+                return "└"
+            elif down and left:
+                return "┐"
+            elif down and right:
+                return "┌"
+        # count < 2: not a valid junction
+        return None
