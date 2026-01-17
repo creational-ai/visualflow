@@ -167,8 +167,8 @@ class TestEdgeAnalysis:
         assert len(same_layer) == 3
         assert set(same_layer) == {"b", "c", "d"}
 
-    def test_find_same_layer_targets_returns_empty_for_single(self) -> None:
-        """find_same_layer_targets returns empty if only one target per layer."""
+    def test_find_same_layer_targets_returns_empty_for_different_layers(self) -> None:
+        """find_same_layer_targets returns empty if targets on different layers (>10 apart)."""
         router = SimpleRouter()
         node_a = Node(id="a", content=make_test_box("A"))
         node_b = Node(id="b", content=make_test_box("B"))
@@ -176,8 +176,8 @@ class TestEdgeAnalysis:
 
         positions = {
             "a": NodePosition(node=node_a, x=10, y=0),
-            "b": NodePosition(node=node_b, x=0, y=10),   # Different y
-            "c": NodePosition(node=node_c, x=20, y=20),  # Different y
+            "b": NodePosition(node=node_b, x=0, y=15),   # Different layer
+            "c": NodePosition(node=node_c, x=20, y=40),  # Very different layer (>10 apart)
         }
         edges = [
             Edge(source="a", target="b"),
@@ -186,6 +186,7 @@ class TestEdgeAnalysis:
 
         same_layer = router._find_same_layer_targets(positions, edges)
 
+        # With tolerance=10, targets at y=15 and y=40 are in different layers
         assert same_layer == []
 
     def test_find_merge_targets_identifies_fan_in(self) -> None:

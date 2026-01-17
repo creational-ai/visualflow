@@ -194,38 +194,58 @@ class SimpleRouter:
         self,
         positions: dict[str, NodePosition],
         edges: list[Edge],
+        tolerance: int = 10,
     ) -> list[str]:
-        """Find target nodes that are at the same y-level.
+        """Find target nodes that are at approximately the same y-level.
 
         Used for trunk-and-split routing where all targets
         share a vertical trunk before splitting horizontally.
 
+        Targets are considered same-layer if their Y positions are within
+        the tolerance (accounts for different box heights in same graph rank).
+
         Args:
             positions: Node positions keyed by node ID
             edges: Edges from a single source
+            tolerance: Max Y difference to consider same layer (default 10)
 
         Returns:
-            List of target node IDs at the same layer (most common y)
+            List of target node IDs at the same layer
         """
         if not edges:
             return []
 
-        # Group targets by y position
-        targets_by_y: dict[int, list[str]] = {}
+        # Get all target Y positions
+        target_ys: list[tuple[str, int]] = []
         for edge in edges:
             target_pos = positions.get(edge.target)
             if target_pos:
-                y = target_pos.y
-                if y not in targets_by_y:
-                    targets_by_y[y] = []
-                targets_by_y[y].append(edge.target)
+                target_ys.append((edge.target, target_pos.y))
 
-        # Return targets at most common y (if more than one)
-        if not targets_by_y:
+        if len(target_ys) < 2:
             return []
-        most_common_y = max(targets_by_y, key=lambda y: len(targets_by_y[y]))
-        same_layer = targets_by_y[most_common_y]
-        return same_layer if len(same_layer) > 1 else []
+
+        # Check if all targets are within tolerance of each other
+        ys = [y for _, y in target_ys]
+        y_range = max(ys) - min(ys)
+
+        if y_range <= tolerance:
+            # All targets are approximately same layer
+            return [target_id for target_id, _ in target_ys]
+
+        # Group targets by approximate y position (buckets of tolerance size)
+        targets_by_bucket: dict[int, list[str]] = {}
+        for target_id, y in target_ys:
+            bucket = y // tolerance
+            if bucket not in targets_by_bucket:
+                targets_by_bucket[bucket] = []
+            targets_by_bucket[bucket].append(target_id)
+
+        # Return targets in largest bucket (if more than one)
+        if not targets_by_bucket:
+            return []
+        largest_bucket = max(targets_by_bucket.values(), key=len)
+        return largest_bucket if len(largest_bucket) > 1 else []
 
     def _find_merge_targets(
         self,
@@ -335,9 +355,10 @@ class SimpleRouter:
 
         target_positions.sort(key=lambda t: t[1].x)
 
-        # Calculate trunk endpoint (4 rows above targets for arrow space)
-        target_y = target_positions[0][1].y
-        trunk_end_y = target_y - 4  # Leave room for arrow below split
+        # Calculate trunk endpoint (4 rows above topmost target for arrow space)
+        # Use minimum y (topmost target) to ensure all targets have room for arrows
+        min_target_y = min(tp[1].y for tp in target_positions)
+        trunk_end_y = min_target_y - 4  # Leave room for arrow below split
 
         # Calculate horizontal split range
         leftmost_x = min(tp[1].x + tp[1].node.width // 2 for tp in target_positions)
