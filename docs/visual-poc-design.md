@@ -30,13 +30,19 @@ We have three layout engines, ascii-dag's sophisticated edge routing logic, and 
                    │
                    ▼
 ┌──────────────────────────────────────┐
-│  PoC 1: Design & Architecture        │
-│  LayoutEngine + Canvas + EdgeRouter  │
+│  PoC 1: Architecture Foundation      │
+│  LayoutEngine + Canvas (boxes only)  │
 └──────────────────┬───────────────────┘
                    │
                    ▼
 ┌──────────────────────────────────────┐
-│  PoC 2: Interface Layer              │
+│  PoC 2: Edge Routing                 │
+│  Unicode canvas fix + SimpleRouter   │
+└──────────────────┬───────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────┐
+│  PoC 3: Interface Layer              │
 │  list_tasks → ASCII diagram          │
 └──────────────────────────────────────┘
 ```
@@ -106,20 +112,20 @@ visualflow/
 
 ---
 
-### PoC 1: Design & Architecture
+### PoC 1: Architecture Foundation ✅ Complete
 
-**Proves**: We can build a flexible, well-tested foundation for diagram generation with >90% code coverage.
+**Proves**: We can build a flexible, well-tested foundation for diagram generation with box positioning.
 
-**Unlocks**: PoC 2 - provides the rendering infrastructure for end-to-end pipeline.
+**Unlocks**: PoC 2 - provides positioned boxes for edge routing.
 
 **Depends On**: PoC 0 (engine selection, coordinate understanding)
 
 **Scope**:
-- `LayoutEngine` abstract base class
-- Adapter(s) for selected engine(s) from PoC 0
-- `Canvas` class with box rendering
-- `EdgeRouter` with basic routing
-- Comprehensive test suite
+- `LayoutEngine` protocol with two implementations (Grandalf, Graphviz)
+- `Canvas` class with box rendering (place_box, render)
+- Data models (Node, Edge, DAG, NodePosition, LayoutResult, EdgePath)
+- `render_dag()` function for boxes-only output
+- Comprehensive test suite (167 tests)
 
 **Core Components**:
 
@@ -179,13 +185,48 @@ visualflow/
 
 ---
 
-### PoC 2: Interface Layer
+### PoC 2: Edge Routing
+
+**Proves**: We can connect positioned boxes with clean ASCII edge lines, producing complete diagrams.
+
+**Unlocks**: PoC 3 - provides complete rendering (boxes + edges) for MC integration.
+
+**Depends On**: PoC 1 (box positioning infrastructure)
+
+**Scope**:
+- Fix canvas unicode handling (wide characters)
+- `EdgeRouter` protocol with `SimpleRouter` implementation
+- `Canvas.draw_edge()` for rendering edge paths
+- Box-drawing characters: `│`, `─`, `┌`, `┐`, `└`, `┘`, `▼`
+
+**Success Criteria**:
+- All 7 fixtures render with edges
+- Diagrams look "hand-crafted"
+- No overlapping edges with boxes
+- All existing tests pass
+
+**Deliverables**:
+```
+visualflow/
+├── src/
+│   └── visualflow/
+│       └── routing/
+│           ├── __init__.py
+│           ├── base.py          # EdgeRouter protocol
+│           └── simple.py        # SimpleRouter
+└── tests/
+    └── test_routing.py
+```
+
+---
+
+### PoC 3: Interface Layer
 
 **Proves**: The core library works as a **standalone open-source package** that can be easily consumed by Mission Control (and others).
 
 **Unlocks**: Open-source release, Claude skill integration, other projects using the library.
 
-**Depends On**: PoC 1 (rendering infrastructure)
+**Depends On**: PoC 2 (edge routing for complete diagrams)
 
 **Vision**: Build a standalone ASCII DAG visualization library
 - **Not** Mission Control-specific code
@@ -264,17 +305,22 @@ visualflow/
 
 ## Execution Order
 
-1. **PoC 0 - Exploration** (no dependencies)
+1. **PoC 0 - Exploration** ✅ Complete
    - Create test infrastructure
    - Test all three engines
    - Document findings
 
-2. **PoC 1 - Design & Architecture** (requires PoC 0)
+2. **PoC 1 - Architecture Foundation** ✅ Complete
    - Implement based on PoC 0 findings
-   - Build core components
-   - Achieve coverage target
+   - Build core components (models, engines, canvas)
+   - 167 tests passing
 
-3. **PoC 2 - Interface Layer** (requires PoC 1)
+3. **PoC 2 - Edge Routing** (requires PoC 1)
+   - Fix canvas unicode handling
+   - Implement SimpleRouter
+   - Add edge drawing to canvas
+
+4. **PoC 3 - Interface Layer** (requires PoC 2)
    - Connect to Mission Control
    - End-to-end integration
    - Polish and document
@@ -289,11 +335,16 @@ visualflow/
 - Coordinate system understanding informs Canvas design
 
 **PoC 1 → PoC 2**:
-- `LayoutEngine.compute()` called by `GraphBuilder`
-- `Canvas` + `EdgeRouter` render the final diagram
-- `LayoutResult` contains positions for `GraphBuilder` to use
+- `LayoutEngine.compute()` provides node positions
+- `Canvas.place_box()` positions boxes correctly
+- `EdgePath` model ready for routing output
 
-**PoC 2 → Future**:
+**PoC 2 → PoC 3**:
+- `EdgeRouter` computes edge paths
+- `Canvas.draw_edge()` renders connections
+- Complete diagrams ready for MC integration
+
+**PoC 3 → Future**:
 - `generate_diagram()` function is the public API
 - Claude skill will call this function
 - Output string can be displayed directly in conversation
@@ -306,10 +357,11 @@ visualflow/
 |-----|------------|------|------------|
 | PoC 0 | Medium | No engine handles variable node sizes well | Test all three; hybrid approach if needed |
 | PoC 0 | Low | ascii-dag subprocess integration complex | Fall back to Grandalf + Graphviz only |
-| PoC 1 | Medium | Edge routing produces ugly diagrams | Start simple; iterate until flawless; no compromises |
 | PoC 1 | Low | 90% coverage hard to achieve | Focus on critical paths; document exclusions |
-| PoC 2 | Low | list_tasks output format changes | Use snapshot tests; adapt as needed |
-| PoC 2 | Low | Performance issues with large graphs | Add filtering; set 50-node limit |
+| PoC 2 | Medium | Edge routing produces ugly diagrams | Start simple; iterate until flawless; no compromises |
+| PoC 2 | Medium | Canvas unicode handling breaks tests | Run full test suite after changes |
+| PoC 3 | Low | list_tasks output format changes | Use snapshot tests; adapt as needed |
+| PoC 3 | Low | Performance issues with large graphs | Add filtering; set 50-node limit |
 
 ---
 
@@ -329,6 +381,11 @@ visualflow/
 - Should we design for extensibility (multiple engines) or simplicity (one engine)?
 
 **PoC 2 must answer**:
+- What routing algorithm handles all 7 fixtures well?
+- How to handle edge-box collisions?
+- Are unicode edge characters (╭╮╰╯) needed or can we use basic box-drawing?
+
+**PoC 3 must answer**:
 - ~~What should we name the library?~~ → `visualflow` (decided)
 - ~~Fork ascii-dag or build inspired-by?~~ → Inspired-by (decided)
 - How to structure adapters for different data sources?
@@ -339,7 +396,7 @@ visualflow/
 ## Success Definition
 
 **Milestone Complete When**:
-1. All three PoCs pass their success criteria
+1. All four PoCs pass their success criteria
 2. **Diagram quality is flawless** - no compromises
 3. Standalone library works independently of Mission Control
 4. MC adapter validates library with real `list_tasks` data
@@ -352,5 +409,5 @@ visualflow/
 
 ---
 
-*Document Status*: Ready for PoC 0 Implementation
+*Document Status*: PoC 0-1 Complete, Ready for PoC 2
 *Last Updated*: January 2026

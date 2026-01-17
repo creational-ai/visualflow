@@ -25,7 +25,9 @@
       "Bash(pytest:*)",
       "Bash(uv run python:*)",
       "Bash(dot:*)",
-      "Skill(dev-lessons)"
+      "Skill(dev-lessons)",
+      "Skill(dev-overview)",
+      "Skill(dev-diagram)"
     ]
   }
 }

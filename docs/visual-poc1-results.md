@@ -8,6 +8,28 @@
 | **Completed** | 2026-01-16T16:46:11-0800 |
 | **Proves** | Core data models, canvas rendering, and layout engines work together to produce positioned ASCII diagrams |
 
+## Diagram
+
+```
+┌───────────────────────┐
+│        PoC 1          │
+│        LAYOUT         │
+│      ✅ Complete      │
+│                       │
+│ Data Models           │
+│   • 6 Pydantic models │
+│   • wcwidth Unicode   │
+│                       │
+│ Engines               │
+│   • Grandalf (fast)   │
+│   • Graphviz (CLI)    │
+│                       │
+│ Architecture          │
+│   • Protocol pattern  │
+│   • Canvas rendering  │
+└───────────────────────┘
+```
+
 ---
 
 ## Goal

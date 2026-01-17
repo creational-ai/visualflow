@@ -119,4 +119,8 @@ When using Mission Control MCP tools (`mcp__mission-control__*`) to manage tasks
 - **Read 1st:** [PM_GUIDE.md](file:///Users/docchang/Development/Mission%20Control/docs/PM_GUIDE.md)
 - **Read 2nd:** [MCP_TOOLS_REFERENCE.md](file:///Users/docchang/Development/Mission%20Control/docs/MCP_TOOLS_REFERENCE.md)
 
+**IMPORTANT: Do NOT update project-level fields** (`update_project` for phase, next_action, notes, etc.). This repo is a milestone within Mission Control, not a standalone project. Only update:
+- Tasks within the `visual` milestone (`create_task`, `update_task`, `complete_task`)
+- The `visual` milestone itself (`update_milestone`, `complete_milestone`)
+
 ---
