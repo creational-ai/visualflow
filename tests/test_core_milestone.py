@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from visualflow import DAG, render_dag
+from visualflow import DAG, render_dag, settings
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ class TestCoreMilestone:
         result = render_dag(dag)
 
         print("\n" + "=" * 100)
-        print(f"MAIN DIAGRAM: {len(dag.nodes)} connected tasks, {len(dag.edges)} edges")
+        print(f"MAIN DIAGRAM ({settings.theme.__class__.__name__}): {len(dag.nodes)} connected tasks, {len(dag.edges)} edges")
         print(f"(Excluded {len(standalone)} standalone tasks)")
         print("=" * 100)
         print(result)
@@ -102,7 +102,7 @@ class TestCoreMilestone:
         result = render_dag(dag)
 
         print("\n" + "=" * 100)
-        print(f"STANDALONE TASKS: {len(dag.nodes)} tasks (no dependencies)")
+        print(f"STANDALONE TASKS ({settings.theme.__class__.__name__}): {len(dag.nodes)} tasks (no dependencies)")
         print("=" * 100)
         print(result)
         print("=" * 100)

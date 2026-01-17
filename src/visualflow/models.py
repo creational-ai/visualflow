@@ -93,3 +93,83 @@ class EdgePath(BaseModel):
     source_id: str
     target_id: str
     segments: list[tuple[int, int, int, int]] = Field(default_factory=list)
+
+
+class EdgeTheme(BaseModel):
+    """Character set for edge rendering.
+
+    Defines all characters used to draw edges between boxes.
+    The default is the current ASCII theme.
+    """
+
+    # Line characters
+    vertical: str = "|"
+    horizontal: str = "-"
+
+    # Corner characters (for turns in paths)
+    corner_tl: str = "┌"  # top-left: going down and right
+    corner_tr: str = "┐"  # top-right: going down and left
+    corner_bl: str = "└"  # bottom-left: going up and right
+    corner_br: str = "┘"  # bottom-right: going up and left
+
+    # T-junction characters
+    tee_down: str = "┬"  # horizontal with vertical going down
+    tee_up: str = "┴"  # horizontal with vertical going up
+    tee_right: str = "├"  # vertical with horizontal going right
+    tee_left: str = "┤"  # vertical with horizontal going left
+
+    # Cross character (4-way junction)
+    cross: str = "┼"
+
+    # Arrow character (at target)
+    arrow_down: str = "v"
+
+    @property
+    def corners(self) -> str:
+        """All corner characters as a string for set membership tests."""
+        return self.corner_tl + self.corner_tr + self.corner_bl + self.corner_br
+
+    @property
+    def tees(self) -> str:
+        """All T-junction characters as a string."""
+        return self.tee_down + self.tee_up + self.tee_right + self.tee_left
+
+    @property
+    def all_junctions(self) -> str:
+        """All junction characters (corners + tees + cross)."""
+        return self.corners + self.tees + self.cross
+
+
+# Pre-defined theme instances
+DEFAULT_THEME = EdgeTheme()
+
+LIGHT_THEME = EdgeTheme(
+    vertical="│",
+    horizontal="─",
+    arrow_down="▼",
+)
+
+ROUNDED_THEME = EdgeTheme(
+    vertical="│",
+    horizontal="─",
+    corner_tl="╭",
+    corner_tr="╮",
+    corner_bl="╰",
+    corner_br="╯",
+    arrow_down="▼",
+)
+
+HEAVY_THEME = EdgeTheme(
+    vertical="┃",
+    horizontal="━",
+    corner_tl="┏",
+    corner_tr="┓",
+    corner_bl="┗",
+    corner_br="┛",
+    tee_down="┳",
+    tee_up="┻",
+    tee_right="┣",
+    tee_left="┫",
+    cross="╋",
+    arrow_down="▼",
+)

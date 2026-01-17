@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from visualflow import DAG, render_dag
+from visualflow import DAG, render_dag, settings
 
 
 @pytest.fixture
@@ -48,8 +48,8 @@ class TestFanOutPatterns:
         assert "SCHEMA" in result
         assert "ABSTRACTION" in result
         # Single vertical path
-        assert "|" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.arrow_down in result
 
     def test_fanout_1_to_2(self, core_tasks) -> None:
         """1-2: Single source → two targets (poc-3 → {poc-5, poc-6})."""

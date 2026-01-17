@@ -7,7 +7,7 @@ Boxes come pre-made with borders - the canvas just positions them.
 from pydantic import BaseModel, PrivateAttr, model_validator
 from wcwidth import wcwidth
 
-from visualflow.models import EdgePath
+from visualflow.models import EdgePath, EdgeTheme, DEFAULT_THEME
 
 
 class Canvas(BaseModel):
@@ -22,6 +22,7 @@ class Canvas(BaseModel):
 
     width: int
     height: int
+    theme: EdgeTheme = DEFAULT_THEME
     _grid: list[list[str]] = PrivateAttr(default_factory=list)
 
     @model_validator(mode="after")
@@ -114,14 +115,16 @@ class Canvas(BaseModel):
         Args:
             path: EdgePath with segments to draw
 
-        Characters used:
-            - Vertical: |
-            - Horizontal: -
-            - Corners: + (intersection)
-            - Arrow: v (at target)
+        Characters used are defined by self.theme:
+            - Vertical: theme.vertical
+            - Horizontal: theme.horizontal
+            - Corners: theme.corner_*
+            - Arrow: theme.arrow_down (at target)
         """
         if not path.segments:
             return
+
+        t = self.theme  # Shorthand
 
         for i, (x1, y1, x2, y2) in enumerate(path.segments):
             is_last_segment = i == len(path.segments) - 1
@@ -133,15 +136,15 @@ class Canvas(BaseModel):
                 for y in range(start_y, end_y + 1):
                     if y == end_y and is_last_segment:
                         # Arrow at target
-                        self._safe_put_edge_char("v", x1, y)
+                        self._safe_put_edge_char(t.arrow_down, x1, y)
                     else:
-                        self._safe_put_edge_char("|", x1, y)
+                        self._safe_put_edge_char(t.vertical, x1, y)
             elif y1 == y2:
                 # Horizontal segment
                 start_x = min(x1, x2)
                 end_x = max(x1, x2)
                 for x in range(start_x, end_x + 1):
-                    self._safe_put_edge_char("-", x, y1)
+                    self._safe_put_edge_char(t.horizontal, x, y1)
 
         # Place corners/junctions at segment connection points
         for i in range(len(path.segments) - 1):
@@ -167,8 +170,10 @@ class Canvas(BaseModel):
             x3, y3, x4, y4: Second segment (outgoing)
 
         Returns:
-            Corner character: ┌ ┐ └ ┘
+            Corner character from theme
         """
+        t = self.theme  # Shorthand
+
         # Determine incoming direction
         if x1 == x2:  # Vertical incoming
             from_above = y2 > y1
@@ -189,25 +194,25 @@ class Canvas(BaseModel):
         if x1 == x2:  # Came from vertical
             if from_above:  # Coming from above
                 if x4 > x3:  # Going right
-                    return "└"
+                    return t.corner_bl  # └
                 else:  # Going left
-                    return "┘"
+                    return t.corner_br  # ┘
             else:  # Coming from below
                 if x4 > x3:  # Going right
-                    return "┌"
+                    return t.corner_tl  # ┌
                 else:  # Going left
-                    return "┐"
+                    return t.corner_tr  # ┐
         else:  # Came from horizontal
             if from_left:  # Coming from left
                 if y4 > y3:  # Going down
-                    return "┐"
+                    return t.corner_tr  # ┐
                 else:  # Going up
-                    return "┘"
+                    return t.corner_br  # ┘
             else:  # Coming from right
                 if y4 > y3:  # Going down
-                    return "┌"
+                    return t.corner_tl  # ┌
                 else:  # Going up
-                    return "└"
+                    return t.corner_bl  # └
 
     def _safe_put_edge_char(self, char: str, x: int, y: int) -> None:
         """Place edge character, avoiding overwriting box content.
@@ -220,57 +225,57 @@ class Canvas(BaseModel):
         if not (0 <= x < self.width and 0 <= y < self.height):
             return
         existing = self._grid[y][x]
+        t = self.theme  # Shorthand
 
         # Combine corners when they overlap (e.g., fan-out/fan-in junctions)
-        corner_chars = "┌┐└┘"
+        corner_chars = t.corners
         if existing in corner_chars and char in corner_chars:
             # Two corners at same point = T-junction or cross
-            # └ + ┘ = ┴ (both coming from above, going left and right)
-            # ┌ + ┐ = ┬ (both going down, coming from left and right)
-            # └ + ┌ = ├ (vertical line, horizontal going right)
-            # ┘ + ┐ = ┤ (vertical line, horizontal going left)
-            combo = existing + char
-            if combo in ("└┘", "┘└"):
-                self._grid[y][x] = "┴"
-            elif combo in ("┌┐", "┐┌"):
-                self._grid[y][x] = "┬"
-            elif combo in ("└┌", "┌└"):
-                self._grid[y][x] = "├"
-            elif combo in ("┘┐", "┐┘"):
-                self._grid[y][x] = "┤"
+            # bl + br = tee_up (both coming from above, going left and right)
+            # tl + tr = tee_down (both going down, coming from left and right)
+            # bl + tl = tee_right (vertical line, horizontal going right)
+            # br + tr = tee_left (vertical line, horizontal going left)
+            combo = {existing, char}
+            if combo == {t.corner_bl, t.corner_br}:
+                self._grid[y][x] = t.tee_up
+            elif combo == {t.corner_tl, t.corner_tr}:
+                self._grid[y][x] = t.tee_down
+            elif combo == {t.corner_bl, t.corner_tl}:
+                self._grid[y][x] = t.tee_right
+            elif combo == {t.corner_br, t.corner_tr}:
+                self._grid[y][x] = t.tee_left
             else:
-                self._grid[y][x] = "┼"  # Full cross for other combos
+                self._grid[y][x] = t.cross  # Full cross for other combos
             return
 
         # Handle line meeting existing corner (T-junctions)
-        # Only when a LINE char (|/-) is placed on an existing CORNER
+        # Only when a LINE char is placed on an existing CORNER
         # This happens when edges from different paths cross
-        # | on existing corner: corner becomes T-junction
-        # - on existing corner: corner becomes T-junction
-        if char == "|" and existing in corner_chars:
-            if existing in "┌└":  # Right-pointing corners + vertical = ├
-                self._grid[y][x] = "├"
-            else:  # Left-pointing corners (┐┘) + vertical = ┤
-                self._grid[y][x] = "┤"
+        if char == t.vertical and existing in corner_chars:
+            # Right-pointing corners (tl, bl) + vertical = tee_right
+            if existing in (t.corner_tl, t.corner_bl):
+                self._grid[y][x] = t.tee_right
+            else:  # Left-pointing corners (tr, br) + vertical = tee_left
+                self._grid[y][x] = t.tee_left
             return
-        if char == "-" and existing in corner_chars:
-            if existing in "┌┐":  # Down-pointing corners + horizontal = ┬
-                self._grid[y][x] = "┬"
-            else:  # Up-pointing corners (└┘) + horizontal = ┴
-                self._grid[y][x] = "┴"
+        if char == t.horizontal and existing in corner_chars:
+            # Down-pointing corners (tl, tr) + horizontal = tee_down
+            if existing in (t.corner_tl, t.corner_tr):
+                self._grid[y][x] = t.tee_down
+            else:  # Up-pointing corners (bl, br) + horizontal = tee_up
+                self._grid[y][x] = t.tee_up
             return
 
         # Only overwrite spaces or simple edge characters
-        # Don't let basic edge chars (|- ) overwrite corners/junctions
-        basic_edge_chars = "|-"
-        corner_junction_chars = "┌┐└┘┬┴├┤┼"
+        # Don't let basic edge chars overwrite corners/junctions
+        basic_edge_chars = t.vertical + t.horizontal
         if char in basic_edge_chars:
             # Basic edge chars can only overwrite spaces or other basic chars
             if existing == " " or existing in basic_edge_chars:
                 self._grid[y][x] = char
         else:
             # Corner/junction chars and arrows can overwrite anything except boxes
-            if existing == " " or existing in "|-+v" + corner_junction_chars:
+            if existing == " " or existing in basic_edge_chars + "+v" + t.all_junctions:
                 self._grid[y][x] = char
 
     def place_box_connector(self, x: int, y: int) -> None:
@@ -288,20 +293,21 @@ class Canvas(BaseModel):
         if not (0 <= x < self.width and 0 <= y < self.height):
             return
 
+        t = self.theme
         existing = self._grid[y][x]
         # Replace ASCII box border characters
         if existing in "-+":
-            self._grid[y][x] = "┬"
+            self._grid[y][x] = t.tee_down
         # Replace Unicode horizontal line (box-drawing)
         elif existing == "─":
-            self._grid[y][x] = "┬"
+            self._grid[y][x] = t.tee_down
         # If already a vertical line, convert to T-junction
-        elif existing == "|":
-            self._grid[y][x] = "┬"
+        elif existing == t.vertical:
+            self._grid[y][x] = t.tee_down
         # If already an up-pointing T, combine to cross
-        elif existing == "┴":
+        elif existing == t.tee_up:
             # T from below + T from above = cross
-            self._grid[y][x] = "┼"
+            self._grid[y][x] = t.cross
 
     def place_box_connectors(
         self,
@@ -462,21 +468,30 @@ class Canvas(BaseModel):
         and verify they match their neighbors. This handles cases where
         multiple paths overlap and the correct junction wasn't determined
         during incremental drawing.
-
-        Characters that connect in each direction:
-        - Has DOWN: | ┌ ┐ ├ ┤ ┬ ┼ v
-        - Has UP: | └ ┘ ├ ┤ ┴ ┼
-        - Has RIGHT: - ┌ └ ├ ┬ ┴ ┼
-        - Has LEFT: - ┐ ┘ ┤ ┬ ┴ ┼
         """
+        t = self.theme
+
         # Characters that have lines going in each direction
-        has_down = set("|┌┐├┤┬┼v")
-        has_up = set("|└┘├┤┴┼")
-        has_right = set("-┌└├┬┴┼")
-        has_left = set("-┐┘┤┬┴┼")
+        # Using theme characters for the basic lines
+        has_down = set(
+            t.vertical + t.corner_tl + t.corner_tr +
+            t.tee_right + t.tee_left + t.tee_down + t.cross + t.arrow_down
+        )
+        has_up = set(
+            t.vertical + t.corner_bl + t.corner_br +
+            t.tee_right + t.tee_left + t.tee_up + t.cross
+        )
+        has_right = set(
+            t.horizontal + t.corner_tl + t.corner_bl +
+            t.tee_right + t.tee_down + t.tee_up + t.cross
+        )
+        has_left = set(
+            t.horizontal + t.corner_tr + t.corner_br +
+            t.tee_left + t.tee_down + t.tee_up + t.cross
+        )
 
         # Characters that are junctions/corners (candidates for fixing)
-        junction_chars = set("┌┐└┘┬┴├┤┼")
+        junction_chars = set(t.all_junctions)
 
         # Scan for junctions that might need fixing
         for y in range(self.height):
@@ -508,34 +523,34 @@ class Canvas(BaseModel):
             right: Has connection going right
 
         Returns:
-            Correct junction character, or None if no valid junction
+            Correct junction character from theme, or None if no valid junction
         """
-        # Count connections
+        t = self.theme
         count = sum([up, down, left, right])
 
         if count == 4:
-            return "┼"
+            return t.cross
         elif count == 3:
             if not up:
-                return "┬"  # down + left + right
+                return t.tee_down  # down + left + right
             elif not down:
-                return "┴"  # up + left + right
+                return t.tee_up  # up + left + right
             elif not left:
-                return "├"  # up + down + right
+                return t.tee_right  # up + down + right
             else:  # not right
-                return "┤"  # up + down + left
+                return t.tee_left  # up + down + left
         elif count == 2:
             if up and down:
                 return None  # Just a vertical line, not a junction
             elif left and right:
                 return None  # Just a horizontal line, not a junction
             elif up and left:
-                return "┘"
+                return t.corner_br  # ┘
             elif up and right:
-                return "└"
+                return t.corner_bl  # └
             elif down and left:
-                return "┐"
+                return t.corner_tr  # ┐
             elif down and right:
-                return "┌"
+                return t.corner_tl  # ┌
         # count < 2: not a valid junction
         return None

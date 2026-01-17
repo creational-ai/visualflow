@@ -4,10 +4,14 @@ Generate flawless ASCII diagrams of directed acyclic graphs
 with variable-sized boxes.
 """
 
-from visualflow.models import DAG, Node, Edge, LayoutResult, NodePosition, EdgePath
+from visualflow.models import (
+    DAG, Node, Edge, LayoutResult, NodePosition, EdgePath,
+    EdgeTheme, DEFAULT_THEME, LIGHT_THEME, ROUNDED_THEME, HEAVY_THEME,
+)
 from visualflow.engines import LayoutEngine, GrandalfEngine, GraphvizEngine
 from visualflow.render import Canvas
 from visualflow.routing import EdgeRouter, SimpleRouter
+from visualflow.settings import settings
 
 __version__ = "0.1.0"
 
@@ -16,6 +20,7 @@ def render_dag(
     dag: DAG,
     engine: LayoutEngine | None = None,
     router: EdgeRouter | None = None,
+    theme: EdgeTheme | None = None,
 ) -> str:
     """Render a DAG to ASCII string.
 
@@ -23,12 +28,15 @@ def render_dag(
         dag: The directed acyclic graph to render
         engine: Layout engine to use (defaults to GrandalfEngine)
         router: Edge router to use (defaults to SimpleRouter if edges exist)
+        theme: Edge theme for line/arrow characters (defaults to ASCII theme)
 
     Returns:
         Multi-line ASCII string representation
     """
     if engine is None:
         engine = GrandalfEngine()
+    if theme is None:
+        theme = settings.theme
 
     # Compute layout
     layout = engine.compute(dag)
@@ -36,8 +44,8 @@ def render_dag(
     if not layout.positions:
         return ""
 
-    # Create canvas
-    canvas = Canvas(width=layout.width, height=layout.height)
+    # Create canvas with theme
+    canvas = Canvas(width=layout.width, height=layout.height, theme=theme)
 
     # Place boxes
     for node_id, pos in layout.positions.items():
@@ -69,6 +77,14 @@ __all__ = [
     "LayoutResult",
     "NodePosition",
     "EdgePath",
+    # Theming
+    "EdgeTheme",
+    "DEFAULT_THEME",
+    "LIGHT_THEME",
+    "ROUNDED_THEME",
+    "HEAVY_THEME",
+    # Settings
+    "settings",
     # Engines
     "LayoutEngine",
     "GrandalfEngine",

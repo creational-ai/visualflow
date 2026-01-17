@@ -10,7 +10,7 @@ This validates the complete pipeline with production-quality inputs.
 
 import pytest
 
-from visualflow import DAG, render_dag, GrandalfEngine
+from visualflow import DAG, render_dag, GrandalfEngine, settings
 from visualflow.routing import SimpleRouter
 
 
@@ -161,8 +161,8 @@ class TestLinearChain:
         assert "EXPLORATION" in result
         assert "LAYOUT" in result
         # Edge characters present
-        assert "|" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.arrow_down in result
 
     def test_three_node_chain(self, poc0_node, poc1_node, poc2_node) -> None:
         """PoC 0 -> PoC 1 -> PoC 2: Three-node vertical chain."""
@@ -278,8 +278,8 @@ class TestFanIn:
         assert "PoC 1" in result
         assert "PoC 2" in result
         # Merge point indicators
-        assert "|" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.arrow_down in result
 
     def test_three_to_one_merge(self, poc0_node, poc1_node, poc2_node, poc3_node) -> None:
         """PoC 0,1,2 -> PoC 3: Three parents, one child."""
@@ -330,9 +330,9 @@ class TestDiamondPattern:
         assert "PoC 2" in result
         assert "PoC 3" in result
         # Edge characters for complex routing
-        assert "|" in result
-        assert "-" in result or "+" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.horizontal in result or settings.theme.cross in result
+        assert settings.theme.arrow_down in result
 
 
 # =============================================================================
@@ -377,10 +377,10 @@ class TestIndependentBranch:
         assert "PoC 3" in result
         assert "PoC 4" in result
         # Edge characters
-        assert "|" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.arrow_down in result
         # Horizontal routing for the branch
-        assert "-" in result
+        assert settings.theme.horizontal in result
 
     def test_two_independent_branches(
         self, poc0_node, poc1_node, poc2_node, poc3_node, poc4_node
@@ -439,8 +439,8 @@ class TestSkipLevel:
         assert "PoC 1" in result
         assert "PoC 2" in result
         # Multiple edges
-        assert "|" in result
-        assert "v" in result
+        assert settings.theme.vertical in result
+        assert settings.theme.arrow_down in result
 
 
 # =============================================================================
@@ -502,7 +502,7 @@ class TestDisconnected:
         assert "PoC 2" in result
         assert "PoC 3" in result
         # Some edges (for poc0->poc1)
-        assert "|" in result or "v" in result
+        assert settings.theme.vertical in result or settings.theme.arrow_down in result
 
 
 # =============================================================================
@@ -629,10 +629,10 @@ class TestEdgeCharacters:
 
         result = render_dag(dag)
 
-        assert "|" in result
+        assert settings.theme.vertical in result
 
     def test_arrows_at_targets(self, poc0_node, poc1_node) -> None:
-        """Arrow v appears at target entry."""
+        """Arrow appears at target entry."""
         dag = DAG()
         dag.add_node(*poc0_node)
         dag.add_node(*poc1_node)
@@ -640,10 +640,10 @@ class TestEdgeCharacters:
 
         result = render_dag(dag)
 
-        assert "v" in result
+        assert settings.theme.arrow_down in result
 
     def test_corners_in_z_shapes(self, poc0_node, poc1_node, poc2_node) -> None:
-        """Z-shaped routing uses + for corners."""
+        """Z-shaped routing uses corners or horizontal segments."""
         dag = DAG()
         dag.add_node(*poc0_node)
         dag.add_node(*poc1_node)
@@ -653,8 +653,8 @@ class TestEdgeCharacters:
 
         result = render_dag(dag)
 
-        # Either + corners or - horizontal segments
-        assert "+" in result or "-" in result
+        # Either corners or horizontal segments
+        assert settings.theme.cross in result or settings.theme.horizontal in result
 
 
 # =============================================================================
