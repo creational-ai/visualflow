@@ -3,6 +3,7 @@
 import pytest
 
 from visualflow.render import Canvas
+from visualflow.models import EdgePath
 
 
 class TestCanvasCreation:
@@ -151,3 +152,161 @@ class TestCanvasRender:
         result = canvas.render()
         assert "\u250c" in result  # Top-left corner
         assert "\u2518" in result  # Bottom-right corner
+
+
+class TestCanvasUnicode:
+    """Tests for Canvas unicode handling."""
+
+    def test_place_box_with_emoji(self) -> None:
+        """Box containing emoji renders at correct column position."""
+        canvas = Canvas(width=20, height=5)
+        # Emoji takes 2 columns
+        box = "+-----+\n| \U0001F680  |\n+-----+"  # rocket emoji
+        canvas.place_box(box, x=0, y=0)
+        result = canvas.render()
+        lines = result.split("\n")
+        assert lines[0] == "+-----+"
+        assert "\U0001F680" in lines[1]
+        assert lines[2] == "+-----+"
+
+    def test_place_box_with_cjk(self) -> None:
+        """Box containing CJK characters renders correctly."""
+        canvas = Canvas(width=20, height=5)
+        # Each CJK char takes 2 columns
+        box = "+------+\n| \u4e2d\u6587 |\n+------+"  # Chinese chars
+        canvas.place_box(box, x=0, y=0)
+        result = canvas.render()
+        lines = result.split("\n")
+        assert lines[0] == "+------+"
+        assert "\u4e2d" in lines[1]
+        assert "\u6587" in lines[1]
+        assert lines[2] == "+------+"
+
+    def test_multiple_boxes_with_emoji_alignment(self) -> None:
+        """Multiple boxes with emoji align correctly."""
+        canvas = Canvas(width=40, height=5)
+        box1 = "+-----+\n| \U0001F680  |\n+-----+"  # rocket
+        box2 = "+-----+\n| OK  |\n+-----+"
+        canvas.place_box(box1, x=0, y=0)
+        canvas.place_box(box2, x=10, y=0)
+        result = canvas.render()
+        # Second box should start at column 10
+        assert result.count("+-----+") == 4  # 2 boxes x 2 lines each
+
+    def test_get_char_returns_placeholder_as_empty(self) -> None:
+        """get_char returns empty string for wide char placeholder."""
+        canvas = Canvas(width=10, height=3)
+        canvas.place_box("\U0001F680", x=0, y=0)  # rocket at 0,0
+        # The emoji is at column 0, placeholder at column 1
+        assert canvas.get_char(0, 0) == "\U0001F680"
+        assert canvas.get_char(1, 0) == ""  # placeholder
+
+    def test_wide_char_near_boundary(self) -> None:
+        """Wide character near canvas boundary is handled."""
+        canvas = Canvas(width=5, height=3)
+        # Emoji at column 3 would need column 4 for placeholder
+        canvas.place_box("...\U0001F680", x=0, y=0)
+        result = canvas.render()
+        # Should render without error
+        assert "..." in result
+
+
+class TestCanvasDrawEdge:
+    """Tests for Canvas.draw_edge method."""
+
+    def test_draw_vertical_edge(self) -> None:
+        """Vertical edge draws with | characters."""
+        canvas = Canvas(width=10, height=10)
+        path = EdgePath(
+            source_id="a",
+            target_id="b",
+            segments=[(5, 2, 5, 7)],  # Vertical from y=2 to y=7
+        )
+        canvas.draw_edge(path)
+
+        # Check vertical line
+        for y in range(2, 7):
+            assert canvas.get_char(5, y) == "|"
+        # Arrow at end
+        assert canvas.get_char(5, 7) == "v"
+
+    def test_draw_horizontal_edge(self) -> None:
+        """Horizontal edge draws with - characters."""
+        canvas = Canvas(width=15, height=5)
+        path = EdgePath(
+            source_id="a",
+            target_id="b",
+            segments=[(2, 2, 10, 2)],  # Horizontal from x=2 to x=10
+        )
+        canvas.draw_edge(path)
+
+        for x in range(2, 11):
+            assert canvas.get_char(x, 2) == "-"
+
+    def test_draw_z_shape_edge(self) -> None:
+        """Z-shaped edge draws correctly with corner."""
+        canvas = Canvas(width=20, height=15)
+        path = EdgePath(
+            source_id="a",
+            target_id="b",
+            segments=[
+                (5, 3, 5, 6),    # Down
+                (5, 6, 12, 6),   # Across
+                (12, 6, 12, 10), # Down
+            ],
+        )
+        canvas.draw_edge(path)
+
+        # First vertical segment
+        for y in range(3, 6):
+            assert canvas.get_char(5, y) == "|"
+        # Corner at (5, 6): coming from above, going right → └
+        assert canvas.get_char(5, 6) == "└"
+        # Horizontal segment
+        for x in range(6, 12):
+            assert canvas.get_char(x, 6) == "-"
+        # Corner at (12, 6): coming from left, going down → ┐
+        assert canvas.get_char(12, 6) == "┐"
+        # Second vertical segment with arrow
+        for y in range(7, 10):
+            assert canvas.get_char(12, y) == "|"
+        assert canvas.get_char(12, 10) == "v"
+
+    def test_edge_does_not_overwrite_box(self) -> None:
+        """Edge drawing does not overwrite box characters."""
+        canvas = Canvas(width=20, height=10)
+        box = "+---+\n| A |\n+---+"
+        canvas.place_box(box, x=5, y=3)
+
+        # Try to draw edge through box area
+        path = EdgePath(
+            source_id="a",
+            target_id="b",
+            segments=[(7, 0, 7, 8)],  # Vertical through box
+        )
+        canvas.draw_edge(path)
+
+        # Box content should be preserved
+        assert canvas.get_char(5, 3) == "+"
+        assert canvas.get_char(7, 4) == "A"  # Box content not overwritten
+
+    def test_empty_path_does_nothing(self) -> None:
+        """Empty EdgePath does not modify canvas."""
+        canvas = Canvas(width=10, height=10)
+        path = EdgePath(source_id="a", target_id="b", segments=[])
+        canvas.draw_edge(path)
+        # Canvas should be unchanged (all spaces)
+        assert canvas.render() == ""
+
+    def test_edge_out_of_bounds_ignored(self) -> None:
+        """Edge segments outside canvas bounds are ignored."""
+        canvas = Canvas(width=5, height=5)
+        path = EdgePath(
+            source_id="a",
+            target_id="b",
+            segments=[(2, 2, 10, 2)],  # Extends beyond canvas
+        )
+        canvas.draw_edge(path)  # Should not raise
+        # Only in-bounds portion drawn
+        for x in range(2, 5):
+            assert canvas.get_char(x, 2) == "-"

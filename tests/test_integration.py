@@ -149,6 +149,100 @@ class TestRenderDagDefaultEngine:
         assert "Task A" in result
 
 
+class TestRenderDagWithEdges:
+    """Integration tests for render_dag with edge routing."""
+
+    def test_simple_chain_has_edges(self) -> None:
+        """Simple chain renders with edge characters."""
+        dag = create_simple_chain()
+        result = render_dag(dag, GrandalfEngine())
+        # Should have vertical edge characters
+        assert "|" in result or "v" in result
+
+    def test_diamond_has_edges(self) -> None:
+        """Diamond pattern renders with edge characters."""
+        dag = create_diamond()
+        result = render_dag(dag, GrandalfEngine())
+        # Should have edge characters
+        assert "|" in result or "-" in result or "v" in result
+
+    def test_render_with_explicit_router(self) -> None:
+        """render_dag works with explicitly provided router."""
+        from visualflow.routing import SimpleRouter
+        dag = create_simple_chain()
+        result = render_dag(dag, GrandalfEngine(), SimpleRouter())
+        assert result
+        assert "Task A" in result
+
+    def test_render_preserves_box_content(self) -> None:
+        """Edges do not corrupt box content."""
+        dag = create_simple_chain()
+        result = render_dag(dag, GrandalfEngine())
+        # All box content should be intact
+        assert "Task A" in result
+        assert "Task B" in result
+        assert "Task C" in result
+
+    def test_all_fixtures_render_with_edges(self) -> None:
+        """All 7 fixtures render successfully with edges."""
+        fixtures = [
+            create_simple_chain(),
+            create_diamond(),
+            create_wide_fanout(),
+            create_merge_branch(),
+            create_skip_level(),
+            create_standalone(),
+            create_complex_graph(),
+        ]
+        for dag in fixtures:
+            result = render_dag(dag, GrandalfEngine())
+            assert result  # Non-empty output
+
+
+class TestVisualInspectionWithEdges:
+    """Visual inspection tests with edges - for manual review."""
+
+    def test_print_simple_chain_with_edges(self) -> None:
+        """Print simple chain with edges for visual inspection."""
+        dag = create_simple_chain()
+        result = render_dag(dag, GrandalfEngine())
+        print("\n" + "=" * 60)
+        print("Simple Chain with Edges:")
+        print("=" * 60)
+        print(result)
+        print("=" * 60)
+
+    def test_print_diamond_with_edges(self) -> None:
+        """Print diamond with edges for visual inspection."""
+        dag = create_diamond()
+        result = render_dag(dag, GrandalfEngine())
+        print("\n" + "=" * 60)
+        print("Diamond with Edges:")
+        print("=" * 60)
+        print(result)
+        print("=" * 60)
+
+    def test_print_wide_fanout_with_edges(self) -> None:
+        """Print wide fanout with edges for visual inspection."""
+        dag = create_wide_fanout()
+        result = render_dag(dag, GrandalfEngine())
+        print("\n" + "=" * 60)
+        print("Wide Fanout with Edges:")
+        print("=" * 60)
+        print(result)
+        print("=" * 60)
+
+    def test_print_complex_with_edges(self) -> None:
+        """Print complex graph with edges for visual inspection."""
+        dag = create_complex_graph()
+        result = render_dag(dag, GrandalfEngine())
+        print("\n" + "=" * 60)
+        print("Complex Graph with Edges:")
+        print("=" * 60)
+        print(result)
+        print("=" * 60)
+
+
 class TestVisualInspection:
     """Visual inspection tests - always pass, output for manual review."""
 

@@ -61,7 +61,7 @@ class TestGrandalfEngineBasic:
         """GrandalfEngine can be created."""
         engine = GrandalfEngine()
         assert engine.horizontal_spacing == 4
-        assert engine.vertical_spacing == 2
+        assert engine.vertical_spacing == 6
 
     def test_engine_custom_spacing(self) -> None:
         """GrandalfEngine accepts custom spacing."""

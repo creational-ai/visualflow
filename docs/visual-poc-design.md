@@ -18,32 +18,34 @@ Mission Control - [visual-milestone.md](./visual-milestone.md)
 - No unreadable output
 - Every diagram should look like a human carefully drew it
 
+Note: We call these "text diagrams" not "ASCII diagrams" since we support full Unicode (emoji, box-drawing characters, CJK).
+
 We have three layout engines, ascii-dag's sophisticated edge routing logic, and the ability to iterate. There is no excuse for subpar output. If something doesn't look right, we fix it until it does.
 
 ## PoC Dependency Diagram
 
 ```
 ┌──────────────────────────────────────┐
-│  PoC 0: Exploration                  │
+│  PoC 0: Exploration         ✅      │
 │  Test all 3 layout engines           │
 └──────────────────┬───────────────────┘
                    │
                    ▼
 ┌──────────────────────────────────────┐
-│  PoC 1: Architecture Foundation      │
+│  PoC 1: Architecture Foundation ✅  │
 │  LayoutEngine + Canvas (boxes only)  │
 └──────────────────┬───────────────────┘
                    │
                    ▼
 ┌──────────────────────────────────────┐
-│  PoC 2: Edge Routing                 │
-│  Unicode canvas fix + SimpleRouter   │
+│  PoC 2: Edge Routing         ✅     │
+│  SimpleRouter + box-drawing corners  │
 └──────────────────┬───────────────────┘
                    │
                    ▼
 ┌──────────────────────────────────────┐
-│  PoC 3: Interface Layer              │
-│  list_tasks → ASCII diagram          │
+│  PoC 3: Box Connectors & Routing ○  │
+│  ┬ connectors + smart routing        │
 └──────────────────────────────────────┘
 ```
 
@@ -185,25 +187,28 @@ visualflow/
 
 ---
 
-### PoC 2: Edge Routing
+### PoC 2: Edge Routing ✅ Complete
 
-**Proves**: We can connect positioned boxes with clean ASCII edge lines, producing complete diagrams.
+**Proves**: We can connect positioned boxes with clean edge lines, producing complete diagrams.
 
-**Unlocks**: PoC 3 - provides complete rendering (boxes + edges) for MC integration.
+**Unlocks**: PoC 3 - provides complete rendering (boxes + edges) for box connector integration.
 
 **Depends On**: PoC 1 (box positioning infrastructure)
 
 **Scope**:
-- Fix canvas unicode handling (wide characters)
+- Fix canvas unicode handling (wide characters via wcwidth)
 - `EdgeRouter` protocol with `SimpleRouter` implementation
 - `Canvas.draw_edge()` for rendering edge paths
-- Box-drawing characters: `│`, `─`, `┌`, `┐`, `└`, `┘`, `▼`
+- Box-drawing corners: `┌`, `┐`, `└`, `┘` for 90-degree turns
+- T-junctions: `┬`, `┴`, `├`, `┤` for merging edges
+- Z-shape and L-shape routing for offset nodes
 
-**Success Criteria**:
+**Delivered**:
+- 220 tests passing (up from 167)
 - All 7 fixtures render with edges
-- Diagrams look "hand-crafted"
-- No overlapping edges with boxes
-- All existing tests pass
+- Real diagram test suite (`test_real_diagrams.py`) with 24 tests
+- Proper corner character selection based on direction
+- Junction combining for fan-out/fan-in patterns
 
 **Deliverables**:
 ```
@@ -215,91 +220,191 @@ visualflow/
 │           ├── base.py          # EdgeRouter protocol
 │           └── simple.py        # SimpleRouter
 └── tests/
-    └── test_routing.py
+    ├── test_routing.py
+    └── test_real_diagrams.py    # Real PoC diagram tests
 ```
 
 ---
 
-### PoC 3: Interface Layer
+### PoC 3: Box Connectors & Smart Routing
+
+**Proves**: Edge connections are visually integrated with box borders, and complex routing patterns (trunk-and-split, merge) render cleanly.
+
+**Unlocks**: PoC 4 (Interface Layer) - polished diagrams ready for MC integration.
+
+**Depends On**: PoC 2 (edge routing infrastructure)
+
+**Features**:
+1. Box connectors - `┬` on box bottom borders where edges exit
+2. Trunk-and-split - same-layer targets share trunk before splitting (optional cleaner fan-out)
+3. Merge routing - multiple sources merge at junction before reaching target
+
+**Problem**: Currently edges end with `v` arrows pointing at boxes, but there's no visual connection ON the box itself:
+```
+┌───────────┐
+│   Node A  │
+└───────────┘
+      |
+      v
+┌───────────┐
+│   Node B  │
+└───────────┘
+```
+
+**Solution**: Add `┬` connector on the bottom border where edges exit:
+```
+┌───────────┐
+│   Node A  │
+└─────┬─────┘
+      |
+      v
+┌───────────┐
+│   Node B  │
+└───────────┘
+```
+
+The bottom box has no `┬` since it has no outgoing edges.
+
+**Complex Example - Diamond + Independent Branch:**
+
+Input edges:
+- PoC 0 → PoC 1 (diamond)
+- PoC 0 → PoC 2 (diamond)
+- PoC 1 → PoC 3 (diamond merge)
+- PoC 2 → PoC 3 (diamond merge)
+- PoC 0 → PoC 4 (independent)
+
+Expected output:
+```
+                         ┌───────────────────────────┐
+                         │          PoC 0            │
+                         └─────────┬───────┬─────────┘
+                                   │       │
+                                   │       └──────────────────────────────────┐
+                                   │                                          │
+                    ┌──────────────┴──────────────┐                           │
+                    │                             │                           │
+                    v                             v                           v
+         ┌─────────────────┐           ┌─────────────────┐         ┌─────────────────┐
+         │      PoC 1      │           │      PoC 2      │         │      PoC 4      │
+         └────────┬────────┘           └────────┬────────┘         └─────────────────┘
+                  │                             │
+                  └──────────────┬──────────────┘
+                                 │
+                                 v
+                     ┌─────────────────┐
+                     │      PoC 3      │
+                     └─────────────────┘
+```
+
+Key routing requirements:
+- Left `┬`: Single trunk goes down, then fans out to PoC 1 and PoC 2
+- Right `┬`: Separate independent path to PoC 4
+- Bottom `┬`: PoC 1 and PoC 2 edges merge into PoC 3
+- Edges from same source to same-layer targets share a trunk before splitting
+
+**Reference Example - Merge with Independent Branch (from architecture.md):**
+
+One parent merges with another AND has its own independent child:
+
+Input edges:
+- poc-1 → poc-8 (independent)
+- poc-1 → poc-3 (merge with poc-2)
+- poc-2 → poc-3 (merge with poc-1)
+
+Expected output:
+```
+┌──────────────────────────┐                ┌──────────────────────────┐
+│          poc-1           │                │          poc-2           │
+│         Schema           │                │         Server           │
+└─────────┬────┬───────────┘                └────────────┬─────────────┘
+          │    │                                         │
+          │    └─────────────────────┬───────────────────┘   ← MERGE
+          │                          │
+          ▼                          ▼
+┌──────────────────────────┐  ┌──────────────────────────┐
+│          poc-8           │  │          poc-3           │
+│   Database Abstraction   │  │           CRUD           │
+│    (only from poc-1)     │  │   (merged from both)     │
+└──────────────────────────┘  └──────────────────────────┘
+```
+
+Key routing requirements:
+- poc-1 has TWO exit points (`┬────┬`)
+- Left exit: straight down to poc-8 (independent)
+- Right exit: merges with poc-2's edge going to poc-3
+- The merge uses `┬` junction where the two paths combine
+
+**Scope**:
+- Modify `Canvas` or post-processing to add `┬` on box bottom borders at edge exit points
+- **Alignment**: `┬` must be at exact same x-coordinate as edge line
+- Handle multiple exit points (fan-out): `└──┬──┬──┬──┘`
+- **Multi-edge exit routing**: Multiple edges from same source get separate x-offsets
+  - Currently all edges exit from center (`box.x + box.width // 2`)
+  - Need to space exit points evenly on bottom border
+  - Enables "independent branch" pattern from architecture.md example 2
+- Preserve box content integrity
+- Update test suite
+
+**Success Criteria**:
+- All diagrams show `┬` connectors where edges exit boxes
+- Fan-out patterns show multiple `┬` characters
+- Box content and borders remain intact
+- All existing tests pass
+
+**Deliverables**:
+```
+visualflow/
+├── src/
+│   └── visualflow/
+│       └── render/
+│           └── canvas.py        # Updated with connector logic
+└── tests/
+    └── test_connectors.py       # Connector-specific tests
+```
+
+---
+
+### PoC 4: Interface Layer (Future)
 
 **Proves**: The core library works as a **standalone open-source package** that can be easily consumed by Mission Control (and others).
 
 **Unlocks**: Open-source release, Claude skill integration, other projects using the library.
 
-**Depends On**: PoC 2 (edge routing for complete diagrams)
-
-**Vision**: Build a standalone ASCII DAG visualization library
-- **Not** Mission Control-specific code
-- MC is just one consumer that validates the library works
-- Consider: new PyPI package? Fork of ascii-dag? Python port inspired by both?
-- Design for reusability from day one
+**Depends On**: PoC 3 (polished diagrams)
 
 **Scope**:
 - Clean public API for the library
 - Adapter layer for Mission Control's `list_tasks` (separate from core lib)
 - End-to-end validation with real MC data
 - Documentation for open-source release
-- **Unicode edge characters** - rich box-drawing for smoother routing:
-  - Rounded corners: `╭`, `╮`, `╰`, `╯`
-  - Arrows: `→`, `←`, `↑`, `↓`, `▶`, `▼`
-  - Optional line styles: single (`│─`), double (`║═`), rounded
+- Optional: Rounded corners (`╭`, `╮`, `╰`, `╯`), line style options
 
-**Library Interface** (generic, not MC-specific):
+**Library Interface** (already implemented):
 ```python
-from visualflow import DAG, render
+from visualflow import DAG, render_dag
 
-# Core library - works with any data
 dag = DAG()
-dag.add_node("a", label="Task A", width=15, height=3)
-dag.add_node("b", label="Task B", width=15, height=3)
+dag.add_node("a", "┌─────┐\n│  A  │\n└─────┘")
+dag.add_node("b", "┌─────┐\n│  B  │\n└─────┘")
 dag.add_edge("a", "b")
 
-diagram = render(dag)  # Returns ASCII string
+diagram = render_dag(dag)
 ```
 
-**Mission Control Adapter** (separate layer):
+**Mission Control Adapter** (future):
 ```python
 from visualflow.adapters.mission_control import from_tasks
 
-# MC-specific adapter that uses the core library
 tasks = list_tasks(project_slug="my-project")
 diagram = from_tasks(tasks, milestone_filter="core")
 ```
 
-**Open Source Considerations**:
-- Name: `visualflow` (decided)
-- Relationship to ascii-dag (Rust): Inspired-by (uses similar concepts)
-- License: MIT (same as ascii-dag)
-- PyPI publishing ready
-
 **Success Criteria**:
-- Core library works independently (no MC dependency)
 - MC adapter validates library with real data
-- Clean separation: core lib vs. adapters
 - Documentation sufficient for external users
-- All task statuses display correctly (✓ complete, ● active, ○ planned)
 - Performance <1 second for 30 nodes
-- **Quality gate**: Real MC data produces diagrams indistinguishable from hand-drawn
-
-**Deliverables**:
-```
-visualflow/
-├── src/
-│   └── visualflow/              # PyPI package name
-│       ├── __init__.py          # Public API
-│       ├── dag.py               # DAG class
-│       ├── render.py            # render() function
-│       ├── engines/             # Layout engine adapters (from PoC 1)
-│       └── adapters/            # Data source adapters
-│           ├── __init__.py
-│           └── mission_control.py  # MC-specific adapter
-├── tests/
-│   ├── test_core_api.py         # Core library tests
-│   └── test_mc_adapter.py       # MC adapter tests
-└── docs/
-    ├── poc2-results.md
-    └── README.md                # Library documentation
-```
+- PyPI publishable
 
 ---
 
@@ -315,15 +420,21 @@ visualflow/
    - Build core components (models, engines, canvas)
    - 167 tests passing
 
-3. **PoC 2 - Edge Routing** (requires PoC 1)
-   - Fix canvas unicode handling
-   - Implement SimpleRouter
-   - Add edge drawing to canvas
+3. **PoC 2 - Edge Routing** ✅ Complete
+   - Fix canvas unicode handling (wcwidth)
+   - Implement SimpleRouter with Z-shape and L-shape routing
+   - Box-drawing corners (`┌┐└┘`) and T-junctions (`┬┴├┤`)
+   - 220 tests passing
 
-4. **PoC 3 - Interface Layer** (requires PoC 2)
-   - Connect to Mission Control
-   - End-to-end integration
-   - Polish and document
+4. **PoC 3 - Box Connectors** (requires PoC 2)
+   - Add `┬` on box bottom borders where edges exit
+   - Handle fan-out with multiple connectors
+   - Polish diagram appearance
+
+5. **PoC 4 - Interface Layer** (requires PoC 3, future)
+   - Mission Control adapter
+   - PyPI release preparation
+   - Documentation
 
 ---
 
@@ -340,12 +451,17 @@ visualflow/
 - `EdgePath` model ready for routing output
 
 **PoC 2 → PoC 3**:
-- `EdgeRouter` computes edge paths
+- `EdgeRouter` computes edge paths with exit points
 - `Canvas.draw_edge()` renders connections
-- Complete diagrams ready for MC integration
+- Edge exit coordinates available for connector placement
 
-**PoC 3 → Future**:
-- `generate_diagram()` function is the public API
+**PoC 3 → PoC 4**:
+- Polished diagrams with integrated connectors
+- `render_dag()` produces publication-quality output
+- Ready for MC adapter integration
+
+**PoC 4 → Future**:
+- `render_dag()` function is the public API
 - Claude skill will call this function
 - Output string can be displayed directly in conversation
 
@@ -355,13 +471,15 @@ visualflow/
 
 | PoC | Risk Level | Risk | Mitigation |
 |-----|------------|------|------------|
-| PoC 0 | Medium | No engine handles variable node sizes well | Test all three; hybrid approach if needed |
-| PoC 0 | Low | ascii-dag subprocess integration complex | Fall back to Grandalf + Graphviz only |
-| PoC 1 | Low | 90% coverage hard to achieve | Focus on critical paths; document exclusions |
-| PoC 2 | Medium | Edge routing produces ugly diagrams | Start simple; iterate until flawless; no compromises |
-| PoC 2 | Medium | Canvas unicode handling breaks tests | Run full test suite after changes |
-| PoC 3 | Low | list_tasks output format changes | Use snapshot tests; adapt as needed |
-| PoC 3 | Low | Performance issues with large graphs | Add filtering; set 50-node limit |
+| PoC 0 | ~~Medium~~ | ~~No engine handles variable node sizes well~~ | ✅ Grandalf handles it well |
+| PoC 0 | ~~Low~~ | ~~ascii-dag subprocess integration complex~~ | ✅ Not needed, Grandalf sufficient |
+| PoC 1 | ~~Low~~ | ~~90% coverage hard to achieve~~ | ✅ Achieved with 167 tests |
+| PoC 2 | ~~Medium~~ | ~~Edge routing produces ugly diagrams~~ | ✅ Box-drawing corners look clean |
+| PoC 2 | ~~Medium~~ | ~~Canvas unicode handling breaks tests~~ | ✅ wcwidth integration works |
+| PoC 3 | Low | Connector placement affects box content | Post-process after box placement |
+| PoC 3 | Low | Multiple connectors on narrow boxes | Center connectors, handle edge cases |
+| PoC 4 | Low | list_tasks output format changes | Use snapshot tests; adapt as needed |
+| PoC 4 | Low | Performance issues with large graphs | Add filtering; set 50-node limit |
 
 ---
 
@@ -380,12 +498,19 @@ visualflow/
 - What's the best coordinate scaling factor?
 - Should we design for extensibility (multiple engines) or simplicity (one engine)?
 
-**PoC 2 must answer**:
-- What routing algorithm handles all 7 fixtures well?
-- How to handle edge-box collisions?
-- Are unicode edge characters (╭╮╰╯) needed or can we use basic box-drawing?
+**PoC 2 must answer**: ✅ Answered
+- ~~What routing algorithm handles all 7 fixtures well?~~ → SimpleRouter with Z-shape and L-shape
+- ~~How to handle edge-box collisions?~~ → `_safe_put_edge_char` preserves box content
+- ~~Are unicode edge characters (╭╮╰╯) needed or can we use basic box-drawing?~~ → Basic box-drawing (`┌┐└┘┬┴├┤`) is sufficient
 
 **PoC 3 must answer**:
+- How to identify edge exit points on box borders?
+- Should connectors be added during box placement or as post-processing?
+- How to handle variable box widths for connector centering?
+- How to calculate x-offsets for multiple edges from same source?
+- Should routing be aware of edge grouping (e.g., diamond targets vs independent)?
+
+**PoC 4 must answer**:
 - ~~What should we name the library?~~ → `visualflow` (decided)
 - ~~Fork ascii-dag or build inspired-by?~~ → Inspired-by (decided)
 - How to structure adapters for different data sources?
@@ -396,7 +521,7 @@ visualflow/
 ## Success Definition
 
 **Milestone Complete When**:
-1. All four PoCs pass their success criteria
+1. All PoCs pass their success criteria (PoC 0-3 core, PoC 4 optional)
 2. **Diagram quality is flawless** - no compromises
 3. Standalone library works independently of Mission Control
 4. MC adapter validates library with real `list_tasks` data
@@ -409,5 +534,5 @@ visualflow/
 
 ---
 
-*Document Status*: PoC 0-1 Complete, Ready for PoC 2
+*Document Status*: PoC 0-2 Complete, Ready for PoC 3
 *Last Updated*: January 2026

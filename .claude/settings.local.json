@@ -27,7 +27,12 @@
       "Bash(dot:*)",
       "Skill(dev-lessons)",
       "Skill(dev-overview)",
-      "Skill(dev-diagram)"
+      "Skill(dev-diagram)",
+      "mcp__mission-control__create_task",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:graphviz.org)"
     ]
   }
 }

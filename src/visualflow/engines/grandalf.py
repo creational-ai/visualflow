@@ -34,7 +34,7 @@ class GrandalfEngine:
     def __init__(
         self,
         horizontal_spacing: int = 4,
-        vertical_spacing: int = 2,
+        vertical_spacing: int = 6,
     ) -> None:
         """Initialize engine with spacing parameters.
 
@@ -65,6 +65,7 @@ class GrandalfEngine:
         x_offset = 0.0
         for component in graph.C:
             sug = SugiyamaLayout(component)
+            sug.yspace = self.vertical_spacing  # Override Grandalf's default (20)
             sug.init_all()
             sug.draw()
 
