@@ -8,6 +8,29 @@
 | **Completed** | 2026-01-17T01:27:29-0800 |
 | **Proves** | visualflow is properly packaged and installable from GitHub |
 
+## Diagram
+
+```
+┌─────────────────────┐
+│       PoC 4         │
+│       RELEASE       │
+│    ✅ Complete      │
+│                     │
+│ Packaging           │
+│   • MIT License     │
+│   • Metadata        │
+│                     │
+│ Documentation       │
+│   • GitHub install  │
+│   • Themes docs     │
+│   • .env config     │
+│                     │
+│ Release             │
+│   • v0.1.0 tag      │
+│   • Versioned deps  │
+└─────────────────────┘
+```
+
 ---
 
 ## Goal
@@ -173,3 +196,9 @@ v0.1.0          Initial release: ASCII DAG visualization with themes
 2. Push tag: `git push origin v0.1.0`
 3. Create GitHub release (optional)
 4. Test install: `uv add git+https://github.com/creational-ai/visualflow.git`
+
+---
+
+## Lessons Learned
+
+- **Annotated tags preferred for releases** - Using `git tag -a` (vs lightweight tags) includes author, date, and message metadata that GitHub uses to auto-populate release notes.

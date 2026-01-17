@@ -33,7 +33,17 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:graphviz.org)",
-      "Bash(uv run python3:*)"
+      "Bash(uv run python3:*)",
+      "Bash(VISUALFLOW_THEME=heavy uv run python3:*)",
+      "Bash(uv add:*)",
+      "Bash(pip index:*)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(test:*)",
+      "Bash(git tag:*)",
+      "Skill(mc-update)",
+      "mcp__mission-control__complete_milestone"
     ]
   }
 }

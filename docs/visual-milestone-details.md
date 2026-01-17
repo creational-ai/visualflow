@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-**Visual Milestone Status**: 🔄 IN PROGRESS (4 of 5 tasks)
+**Visual Milestone Status**: ✅ COMPLETE (5 of 5 tasks)
 
 | Task | Status | What It Proved |
 |------|--------|----------------|
@@ -16,9 +16,9 @@
 | PoC 1 | ✅ Complete | Core data models, canvas rendering, and layout engines work together to produce positioned ASCII diagrams |
 | PoC 2 | ✅ Complete | SimpleRouter produces clean ASCII edge paths connecting positioned boxes with unicode-aware rendering |
 | PoC 3 | ✅ Complete | Smart routing with box connectors, trunk-and-split, merge patterns, and configurable theme system |
-| PoC 4 | 📋 Planned | Add LICENSE, update pyproject.toml and README, create git tag for GitHub install |
+| PoC 4 | ✅ Complete | visualflow is properly packaged and installable from GitHub with MIT license and v0.1.0 tag |
 
-**Current State**: The visualflow library has complete ASCII DAG visualization with smart edge routing and a configurable theme system. Production-ready Pydantic data models (`DAG`, `Node`, `Edge`, `LayoutResult`, `NodePosition`, `EdgePath`, `EdgeTheme`) are implemented with full validation. Two layout engines (`GrandalfEngine` for speed, `GraphvizEngine` for future edge hints) compute node positions in character coordinates. The `SimpleRouter` computes geometric edge paths with smart patterns: trunk-and-split for fan-out, merge routing for fan-in, and box connectors at exit points. Four theme presets (DEFAULT, LIGHT, ROUNDED, HEAVY) are available and configurable via `.env` file with python-dotenv integration. All 293 tests pass with 0.002s render time for complex graphs. The library is ready for PoC 4: GitHub Release.
+**Current State**: The visualflow library is complete and released. Production-ready Pydantic data models (`DAG`, `Node`, `Edge`, `LayoutResult`, `NodePosition`, `EdgePath`, `EdgeTheme`) are implemented with full validation. Two layout engines (`GrandalfEngine` for speed, `GraphvizEngine` for future edge hints) compute node positions in character coordinates. The `SimpleRouter` computes geometric edge paths with smart patterns: trunk-and-split for fan-out, merge routing for fan-in, and box connectors at exit points. Four theme presets (DEFAULT, LIGHT, ROUNDED, HEAVY) are available and configurable via `.env` file with python-dotenv integration. All 293 tests pass. The library is released as v0.1.0 with MIT license and installable via `uv add git+https://github.com/creational-ai/visualflow.git`.
 
 ---
 
@@ -104,20 +104,20 @@ EXTERNAL DEPENDENCIES
 ## Progress Overview Diagram
 
 ```
-                        VISUAL MILESTONE PROGRESS (IN PROGRESS)
+                        VISUAL MILESTONE PROGRESS (COMPLETE)
 ===============================================================================
 
     PoC 0                   PoC 1                   PoC 2                   PoC 3                   PoC 4
-    EXPLORATION             ARCHITECTURE            EDGE ROUTING            SMART ROUTING           INTERFACE
+    EXPLORATION             ARCHITECTURE            EDGE ROUTING            SMART ROUTING           RELEASE
     -------------           -------------           -------------           -------------           -------------
-    ✅ Complete             ✅ Complete             ✅ Complete             ✅ Complete             📋 Planned
+    ✅ Complete             ✅ Complete             ✅ Complete             ✅ Complete             ✅ Complete
 
     ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-    │ Engine      │         │ Foundation  │         │ Routing     │         │ Smart       │         │ Public API  │
-    │ Comparison  │────────▶│ • Models    │────────▶│ • Router    │────────▶│ • Connectors│────────▶│ • README    │
-    │ • Grandalf  │         │ • Canvas    │         │ • Segments  │         │ • TrunkSplit│         │ • PyPI      │
-    │ • Graphviz  │         │ • Engines   │         │ • Unicode   │         │ • MergeRoute│         │ • License   │
-    │ • Perf test │         │ • render()  │         │ • draw_edge │         │ • Themes    │         │ • Examples  │
+    │ Engine      │         │ Foundation  │         │ Routing     │         │ Smart       │         │ Release     │
+    │ Comparison  │────────▶│ • Models    │────────▶│ • Router    │────────▶│ • Connectors│────────▶│ • MIT       │
+    │ • Grandalf  │         │ • Canvas    │         │ • Segments  │         │ • TrunkSplit│         │   License   │
+    │ • Graphviz  │         │ • Engines   │         │ • Unicode   │         │ • MergeRoute│         │ • v0.1.0    │
+    │ • Perf test │         │ • render()  │         │ • draw_edge │         │ • Themes    │         │ • GitHub    │
     └─────────────┘         └─────────────┘         └─────────────┘         └─────────────┘         └─────────────┘
 ```
 
@@ -824,7 +824,88 @@ KEY LESSONS FROM POC 3
 
 ---
 
-## What's Built (Visual In Progress)
+## What PoC 4 Delivered: GitHub Release
+
+**Duration**: 2026-01-17T01:25:01-0800 to 2026-01-17T01:27:29-0800 (~2 minutes)
+
+PoC 4 prepared visualflow for GitHub release with proper licensing, metadata, and documentation. The MIT LICENSE file was added, pyproject.toml was updated with author and license metadata, README was expanded with GitHub installation instructions, theme documentation, and .env configuration. Git tag v0.1.0 was created for versioned installs.
+
+### 1. Release Package Structure
+
+```
+RELEASE ARTIFACTS
+==================================================================
+
+visualflow/
+├── LICENSE                    # MIT License (new)
+├── pyproject.toml             # Updated with metadata
+├── README.md                  # Updated with docs
+└── src/visualflow/            # Unchanged
+
+PYPROJECT.TOML ADDITIONS
+==================================================================
+[project]
+license = { file = "LICENSE" }
+authors = [
+    { name = "Doc Chang" },
+]
+keywords = ["ascii", "dag", "diagram", "graph", "visualization", "terminal"]
+```
+
+### 2. Installation Methods
+
+```
+GITHUB INSTALLATION OPTIONS
+==================================================================
+
+# Latest (main branch)
+uv add git+https://github.com/creational-ai/visualflow.git
+pip install git+https://github.com/creational-ai/visualflow.git
+
+# Specific version (recommended for production)
+uv add git+https://github.com/creational-ai/visualflow.git@v0.1.0
+pip install git+https://github.com/creational-ai/visualflow.git@v0.1.0
+```
+
+### 3. Documentation Updates
+
+README now includes:
+- GitHub installation instructions (uv and pip)
+- Versioned install examples
+- Theme table with all 4 presets
+- Theme usage (per-call and global settings)
+- .env configuration for VISUALFLOW_THEME
+- Updated output example with box connectors
+- License section
+
+### 4. Lessons Learned
+
+```
+KEY LESSONS FROM POC 4
+==================================================================
+
+1. Annotated tags preferred for releases - Using `git tag -a` (vs
+   lightweight tags) includes author, date, and message metadata
+   that GitHub uses to auto-populate release notes.
+
+2. PEP 621 license format - pyproject.toml uses
+   `license = { file = "LICENSE" }` not just a string.
+
+3. Keywords aid discoverability - Adding keywords to pyproject.toml
+   helps with PyPI search if published later.
+```
+
+### PoC 4 Artifacts
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| `LICENSE` | MIT license text | 21 |
+| `pyproject.toml` | Updated with authors, license, keywords | ~35 |
+| `README.md` | GitHub install, themes, .env config | ~180 |
+
+---
+
+## What's Built (Visual Complete)
 
 ```
 MILESTONE COMPLETION MAP
@@ -893,11 +974,11 @@ MILESTONE COMPLETION MAP
 ├── Theme integration tests
 └── Visual inspection tests
 
-📋 Pending (PoC 4)
-├── Add LICENSE file (MIT)
-├── Update pyproject.toml (authors, license)
-├── Update README (GitHub install, themes, .env config)
-└── Create git tag v0.1.0
+✅ Release (PoC 4)
+├── MIT LICENSE file
+├── pyproject.toml with authors, license, keywords
+├── README with GitHub install, themes, .env docs
+└── Git tag v0.1.0 for versioned installs
 ```
 
 ---
@@ -921,29 +1002,32 @@ MILESTONE COMPLETION MAP
 | **fix_junctions() post-processing** | PoC 3 | Ensures correct junction characters after sequential drawing |
 | **EdgeTheme Pydantic model** | PoC 3 | Type-safe theme configuration with validation |
 | **python-dotenv integration** | PoC 3 | Standard .env configuration pattern |
+| **MIT License** | PoC 4 | Standard permissive license, matches ecosystem |
+| **Annotated tags for releases** | PoC 4 | Includes metadata that GitHub uses for release notes |
 
 ---
 
 ## Next Steps
 
-**Visual Milestone: IN PROGRESS** (4 of 5 tasks complete)
+**Visual Milestone: COMPLETE** (5 of 5 tasks complete)
 
-PoC 0 (Engine Exploration), PoC 1 (Architecture Foundation), PoC 2 (Edge Routing), and PoC 3 (Smart Routing and Themes) are complete. The library can render complete ASCII DAG diagrams with positioned boxes, smart edge routing, and configurable themes.
+All PoCs are complete:
+- PoC 0: Engine Exploration - Validated Grandalf and Graphviz for layout
+- PoC 1: Architecture Foundation - Data models, engines, canvas, public API
+- PoC 2: Edge Routing - SimpleRouter with unicode-aware rendering
+- PoC 3: Smart Routing and Themes - Box connectors, trunk-split, merge, themes
+- PoC 4: GitHub Release - MIT license, metadata, documentation, v0.1.0 tag
 
-**Next Task: PoC 4 - GitHub Release**
-1. Add LICENSE file (MIT)
-2. Update pyproject.toml (authors, license, keywords)
-3. Update README (GitHub install, themes, .env config)
-4. Create git tag: `git tag -a v0.1.0 -m "Initial release"`
-5. Push tag: `git push origin v0.1.0`
+**Install**: `uv add git+https://github.com/creational-ai/visualflow.git`
 
-**Install via**: `uv add git+https://github.com/creational-ai/visualflow.git`
+**Versioned Install**: `uv add git+https://github.com/creational-ai/visualflow.git@v0.1.0`
 
 **Future Considerations:**
 - Graphviz spline hints for smoother routing
 - Edge collision avoidance for complex graphs
 - Performance optimization for large graphs (>100 nodes)
 - Entry connectors on target boxes
+- PyPI publishing when a good name is chosen
 
 ---
 
@@ -961,6 +1045,8 @@ PoC 0 (Engine Exploration), PoC 1 (Architecture Foundation), PoC 2 (Edge Routing
 - [PoC 3 Overview](./visual-poc3-overview.md)
 - [PoC 3 Implementation](./visual-poc3-implementation.md)
 - [PoC 3 Results](./visual-poc3-results.md)
+- [PoC 4 Implementation](./visual-poc4-implementation.md)
+- [PoC 4 Results](./visual-poc4-results.md)
 - [Architecture](./architecture.md)
 - [PoC Design](./visual-poc-design.md)
 - [Visual Milestone](./visual-milestone.md)

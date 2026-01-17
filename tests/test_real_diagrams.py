@@ -971,3 +971,62 @@ class TestPoC3Features:
 
         # Multiple arrows (to poc-8 and poc-3)
         assert result.count("v") >= 2, "Expected arrows to poc-8 and poc-3"
+
+
+# =============================================================================
+# JSON MILESTONE DATA TEST
+# =============================================================================
+
+class TestMilestoneFromJSON:
+    """Tests that load milestone data from JSON file and render the DAG."""
+
+    def test_load_visual_tasks_json(self) -> None:
+        """Load visual-tasks.json and render all 5 PoCs."""
+        import json
+        from pathlib import Path
+
+        # Load the JSON file
+        json_path = Path(__file__).parent.parent / "docs" / "visual-tasks.json"
+        with open(json_path) as f:
+            data = json.load(f)
+
+        # Build DAG from JSON data
+        dag = DAG()
+        for task in data["tasks"]:
+            dag.add_node(task["slug"], task["diagram"])
+
+        # Add edges based on depends_on
+        for task in data["tasks"]:
+            if task["depends_on"]:
+                for dep in task["depends_on"]:
+                    dag.add_edge(dep, task["slug"])
+
+        # Render
+        result = render_dag(dag)
+
+        # All 5 PoCs present
+        assert "PoC 0" in result
+        assert "PoC 1" in result
+        assert "PoC 2" in result
+        assert "PoC 3" in result
+        assert "PoC 4" in result
+
+        # All complete (5 checkmarks)
+        assert result.count("✅") == 5, f"Expected 5 ✅ checkmarks, got {result.count('✅')}"
+
+        # Key content from each PoC
+        assert "EXPLORATION" in result
+        assert "LAYOUT" in result
+        assert "ROUTING" in result
+        assert "SMART ROUTING" in result
+        assert "RELEASE" in result
+
+        # Box connectors present (chain of 5 means 4 connectors minimum)
+        assert "┬" in result, "Expected ┬ box connectors"
+
+        # Print for visual inspection
+        print("\n" + "=" * 70)
+        print("VISUAL MILESTONE FROM JSON: All 5 PoCs")
+        print("=" * 70)
+        print(result)
+        print("=" * 70)

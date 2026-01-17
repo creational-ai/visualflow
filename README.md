@@ -2,6 +2,115 @@
 
 ASCII DAG visualization library for rendering directed acyclic graphs as text diagrams with variable-sized boxes.
 
+## Visual Milestone Example
+
+Boxes can contain anything: status indicators, bullet points, emoji (✅), Unicode symbols (•, ─, │), multi-line content. This is the actual task data from this project:
+
+```bash
+# .env
+VISUALFLOW_THEME=ROUNDED
+```
+
+```
+┌───────────────────────────┐
+│          PoC 0            │
+│       EXPLORATION         │
+│       ✅ Complete         │
+│                           │
+│ Engines Evaluated         │
+│   • Grandalf (Python)     │
+│   • Graphviz (C)          │
+│   • ascii-dag (Rust)      │
+│                           │
+│ Decision                  │
+│   • 2 engines selected    │
+│   • Grandalf: positioning │
+│   • Graphviz: edge hints  │
+└─────────────┬─────────────┘
+              │
+              │
+              ▼
+  ┌───────────────────────┐
+  │        PoC 1          │
+  │        LAYOUT         │
+  │      ✅ Complete      │
+  │                       │
+  │ Data Models           │
+  │   • 6 Pydantic models │
+  │   • wcwidth Unicode   │
+  │                       │
+  │ Engines               │
+  │   • Grandalf (fast)   │
+  │   • Graphviz (CLI)    │
+  │                       │
+  │ Architecture          │
+  │   • Protocol pattern  │
+  │   • Canvas rendering  │
+  └───────────┬───────────┘
+              │
+              │
+              ▼
+  ┌───────────────────────┐
+  │        PoC 2          │
+  │       ROUTING         │
+  │     ✅ Complete       │
+  │                       │
+  │ Capabilities          │
+  │   • Edge routing      │
+  │   • Unicode (emoji)   │
+  │   • All 7 fixtures    │
+  │                       │
+  │ Architecture          │
+  │   • EdgeRouter proto  │
+  │   • SimpleRouter      │
+  │   • Canvas.draw_edge  │
+  │                       │
+  │ Performance           │
+  │   • 0.002s render     │
+  └───────────┬───────────┘
+              │
+              │
+              ▼
+  ┌───────────────────────┐
+  │        PoC 3          │
+  │     SMART ROUTING     │
+  │      ✅ Complete      │
+  │                       │
+  │ Edge Patterns         │
+  │   • Box connectors    │
+  │   • Trunk-and-split   │
+  │   • Merge routing     │
+  │                       │
+  │ Theme System          │
+  │   • 4 presets         │
+  │   • .env config       │
+  │   • fix_junctions()   │
+  └───────────┬───────────┘
+              │
+              │
+              ▼
+   ┌─────────────────────┐
+   │       PoC 4         │
+   │       RELEASE       │
+   │    ✅ Complete      │
+   │                     │
+   │ Packaging           │
+   │   • MIT License     │
+   │   • Metadata        │
+   │                     │
+   │ Documentation       │
+   │   • GitHub install  │
+   │   • Themes docs     │
+   │   • .env config     │
+   │                     │
+   │ Release             │
+   │   • v0.1.0 tag      │
+   │   • Versioned deps  │
+   └─────────────────────┘
+```
+
+*This is the actual visual milestone from Mission Control, rendered by visualflow from [docs/visual-tasks.json](docs/visual-tasks.json).*
+
 ## Installation
 
 ### From GitHub (recommended)
@@ -96,24 +205,6 @@ print(render_dag(dag))  # Uses ROUNDED_THEME
 ```
 
 ## Configuration
-
-### Environment Variable
-
-Set the default theme via environment variable:
-
-```bash
-export VISUALFLOW_THEME=rounded
-```
-
-Or in a `.env` file:
-
-```
-VISUALFLOW_THEME=rounded
-```
-
-Valid values: `default`, `light`, `rounded`, `heavy`
-
-### Programmatic Configuration
 
 ```python
 from visualflow import settings, HEAVY_THEME

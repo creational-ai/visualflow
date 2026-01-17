@@ -1,0 +1,71 @@
+{
+  "milestone": "visual",
+  "project": "mission-control",
+  "tasks": [
+    {
+      "slug": "visual-poc0",
+      "name": "Exploration",
+      "type": "poc",
+      "status": "complete",
+      "objective": "Explore all three layout engines to determine optimal combination: all 3, 2, or just 1? Evaluate value vs. complexity trade-off for each.",
+      "unlocks": "Evidence-based decision on which engine(s) to use and how they complement each other",
+      "depends_on": null,
+      "diagram": "┌───────────────────────────┐\n│          PoC 0            │\n│       EXPLORATION         │\n│       ✅ Complete         │\n│                           │\n│ Engines Evaluated         │\n│   • Grandalf (Python)     │\n│   • Graphviz (C)          │\n│   • ascii-dag (Rust)      │\n│                           │\n│ Decision                  │\n│   • 2 engines selected    │\n│   • Grandalf: positioning │\n│   • Graphviz: edge hints  │\n└───────────────────────────┘",
+      "created_at": "2026-01-16T20:03:43Z",
+      "started_at": "2026-01-16T20:10:29Z",
+      "completed_at": "2026-01-16T20:59:23Z"
+    },
+    {
+      "slug": "visual-poc1",
+      "name": "Design and Architecture",
+      "type": "poc",
+      "status": "complete",
+      "objective": "Architect the foundation based on PoC0 findings. Build LayoutEngine abstraction, Canvas renderer, EdgeRouter with >90% test coverage",
+      "unlocks": "Solid, well-tested foundation for diagram generation",
+      "depends_on": ["visual-poc0"],
+      "diagram": "┌───────────────────────┐\n│        PoC 1          │\n│        LAYOUT         │\n│      ✅ Complete      │\n│                       │\n│ Data Models           │\n│   • 6 Pydantic models │\n│   • wcwidth Unicode   │\n│                       │\n│ Engines               │\n│   • Grandalf (fast)   │\n│   • Graphviz (CLI)    │\n│                       │\n│ Architecture          │\n│   • Protocol pattern  │\n│   • Canvas rendering  │\n└───────────────────────┘",
+      "created_at": "2026-01-16T21:47:18Z",
+      "started_at": "2026-01-17T00:24:11Z",
+      "completed_at": "2026-01-17T00:46:11Z"
+    },
+    {
+      "slug": "visual-poc2",
+      "name": "Edge Routing",
+      "type": "poc",
+      "status": "complete",
+      "objective": "Implement edge routing and canvas unicode fix to produce clean ASCII diagrams with boxes connected by edges",
+      "unlocks": "Complete rendering (boxes + edges) for MC integration; Production pipeline from DAG to ASCII output",
+      "depends_on": ["visual-poc1"],
+      "diagram": "┌───────────────────────┐\n│        PoC 2          │\n│       ROUTING         │\n│     ✅ Complete       │\n│                       │\n│ Capabilities          │\n│   • Edge routing      │\n│   • Unicode (emoji)   │\n│   • All 7 fixtures    │\n│                       │\n│ Architecture          │\n│   • EdgeRouter proto  │\n│   • SimpleRouter      │\n│   • Canvas.draw_edge  │\n│                       │\n│ Performance           │\n│   • 0.002s render     │\n└───────────────────────┘",
+      "created_at": "2026-01-17T01:26:37Z",
+      "started_at": "2026-01-17T01:33:31Z",
+      "completed_at": "2026-01-17T01:46:11Z"
+    },
+    {
+      "slug": "visual-poc3",
+      "name": "Box Connectors and Smart Routing",
+      "type": "poc",
+      "status": "complete",
+      "objective": "Implement box connectors and smart routing patterns (trunk-and-split, merge routing) for cleaner ASCII diagrams",
+      "unlocks": "Cleaner diagrams with box connectors; Trunk-and-split pattern for fan-out scenarios; Merge pattern for fan-in scenarios; Foundation for more advanced edge routing",
+      "depends_on": ["visual-poc2"],
+      "diagram": "┌───────────────────────┐\n│        PoC 3          │\n│     SMART ROUTING     │\n│      ✅ Complete      │\n│                       │\n│ Edge Patterns         │\n│   • Box connectors    │\n│   • Trunk-and-split   │\n│   • Merge routing     │\n│                       │\n│ Theme System          │\n│   • 4 presets         │\n│   • .env config       │\n│   • fix_junctions()   │\n└───────────────────────┘",
+      "created_at": "2026-01-17T05:15:03Z",
+      "started_at": "2026-01-17T05:44:42Z",
+      "completed_at": "2026-01-17T06:39:23Z"
+    },
+    {
+      "slug": "visual-poc4",
+      "name": "GitHub Release",
+      "type": "poc",
+      "status": "complete",
+      "objective": "Add LICENSE, update pyproject.toml and README, create git tag v0.1.0 for GitHub-based installation",
+      "unlocks": "uv add git+https://github.com/creational-ai/visualflow.git for any project",
+      "depends_on": ["visual-poc3"],
+      "diagram": "┌─────────────────────┐\n│       PoC 4         │\n│       RELEASE       │\n│    ✅ Complete      │\n│                     │\n│ Packaging           │\n│   • MIT License     │\n│   • Metadata        │\n│                     │\n│ Documentation       │\n│   • GitHub install  │\n│   • Themes docs     │\n│   • .env config     │\n│                     │\n│ Release             │\n│   • v0.1.0 tag      │\n│   • Versioned deps  │\n└─────────────────────┘",
+      "created_at": "2026-01-17T09:12:57Z",
+      "started_at": "2026-01-17T09:25:01Z",
+      "completed_at": "2026-01-17T09:33:38Z"
+    }
+  ]
+}
