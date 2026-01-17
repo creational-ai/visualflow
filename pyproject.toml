@@ -3,6 +3,11 @@ name = "visualflow"
 version = "0.1.0"
 description = "ASCII DAG visualization library with variable-sized boxes"
 readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Doc Chang" },
+]
+keywords = ["ascii", "dag", "diagram", "graph", "visualization", "terminal"]
 requires-python = ">=3.11"
 dependencies = [
     "grandalf>=0.8",

@@ -1,10 +1,27 @@
 # visualflow
 
-DAG visualization library for rendering directed acyclic graphs as text diagrams with variable-sized boxes.
+ASCII DAG visualization library for rendering directed acyclic graphs as text diagrams with variable-sized boxes.
 
 ## Installation
 
+### From GitHub (recommended)
+
 ```bash
+# With uv
+uv add git+https://github.com/creational-ai/visualflow.git
+
+# With pip
+pip install git+https://github.com/creational-ai/visualflow.git
+
+# Specific version
+uv add git+https://github.com/creational-ai/visualflow.git@v0.1.0
+```
+
+### For Development
+
+```bash
+git clone https://github.com/creational-ai/visualflow.git
+cd visualflow
 uv sync --all-extras
 ```
 
@@ -39,22 +56,83 @@ print(render_dag(dag))
 
 Output:
 ```
-           ┌─────────┐
-           │  Node A │
-           └─────────┘
-    ┌--------------------┐
-    v                    v
-┌─────────┐          ┌─────────┐
-│  Node B │          │  Node C │
-└─────────┘          └─────────┘
+                   ┌─────────┐
+                   │  Node A │
+                   └────┬────┘
+                        │
+                        │
+         ╭──────────────┴───────────────╮
+         │                              │
+         │                              │
+         ▼                              ▼
+    ┌─────────┐                    ┌─────────┐
+    │  Node B │                    │  Node C │
+    └─────────┘                    └─────────┘
+```
+
+## Themes
+
+visualflow includes 4 built-in themes for edge rendering:
+
+| Theme | Vertical | Horizontal | Corners | Arrow |
+|-------|----------|------------|---------|-------|
+| `DEFAULT` | `\|` | `-` | `╭╮╰╯` | `v` |
+| `LIGHT` | `│` | `─` | `┌┐└┘` | `▼` |
+| `ROUNDED` | `│` | `─` | `╭╮╰╯` | `▼` |
+| `HEAVY` | `┃` | `━` | `┏┓┗┛` | `▼` |
+
+### Using Themes
+
+```python
+from visualflow import DAG, render_dag, HEAVY_THEME, ROUNDED_THEME
+
+# Pass theme to render_dag
+print(render_dag(dag, theme=HEAVY_THEME))
+
+# Or set global theme
+from visualflow import settings
+settings.theme = ROUNDED_THEME
+print(render_dag(dag))  # Uses ROUNDED_THEME
+```
+
+## Configuration
+
+### Environment Variable
+
+Set the default theme via environment variable:
+
+```bash
+export VISUALFLOW_THEME=rounded
+```
+
+Or in a `.env` file:
+
+```
+VISUALFLOW_THEME=rounded
+```
+
+Valid values: `default`, `light`, `rounded`, `heavy`
+
+### Programmatic Configuration
+
+```python
+from visualflow import settings, HEAVY_THEME
+
+# Set global theme
+settings.theme = HEAVY_THEME
+
+# Reset to default
+settings.reset()
 ```
 
 ## Features
 
 - Variable-sized boxes with any content
 - Unicode support (emoji, CJK characters)
-- Box-drawing corners (`┌ ┐ └ ┘`) for clean routing
-- T-junctions (`┬ ┴ ├ ┤`) for merging edges
+- Box connectors that integrate edges with box borders
+- T-junctions for merging/splitting edges
+- 4 built-in themes (DEFAULT, LIGHT, ROUNDED, HEAVY)
+- Environment-based configuration via `.env`
 - Automatic layout via Sugiyama algorithm (Grandalf)
 
 ## Running Tests
@@ -85,32 +163,16 @@ uv run pytest tests/test_real_diagrams.py -v -s
 uv run pytest tests/test_real_diagrams.py::TestVisualInspection -v -s
 ```
 
-Visual inspection tests include:
-- `test_print_linear_chain` - PoC 0 → PoC 1 → PoC 2
-- `test_print_diamond` - Fan-out and merge pattern
-- `test_print_full_milestone` - Complete 4-node chain
-
-### Test Categories
-
-| Test Class | Description |
-|------------|-------------|
-| `TestLinearChain` | Vertical chains (2, 3, 4 nodes) |
-| `TestFanOut` | One-to-many patterns |
-| `TestFanIn` | Many-to-one merges |
-| `TestDiamondPattern` | Fan-out + fan-in |
-| `TestSkipLevel` | Mixed depth connections |
-| `TestDisconnected` | Multiple components |
-| `TestSingleNode` | Single node rendering |
-| `TestContentPreservation` | Unicode, emoji, box borders |
-| `TestEdgeCharacters` | Pipes, arrows, corners |
-| `TestVisualInspection` | Print diagrams for review |
-
 ## Architecture
 
 ```
-Input DAG → Layout Engine → Edge Router → Canvas → Text Output
+Input DAG -> Layout Engine -> Edge Router -> Canvas -> Text Output
 ```
 
 - **Layout Engine**: Grandalf (Sugiyama algorithm) computes node positions
 - **Edge Router**: SimpleRouter computes edge paths with Z-shaped routing
 - **Canvas**: Places boxes and draws edges with box-drawing characters
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.

@@ -1,6 +1,6 @@
 # Visual Milestone Details
 
-> **Last Updated**: 2026-01-16
+> **Last Updated**: 2026-01-17
 >
 > This document provides a comprehensive overview of the Visual Milestone accomplishments for visualflow - a Python library for generating ASCII diagrams of directed acyclic graphs with variable-sized boxes.
 
@@ -8,76 +8,94 @@
 
 ## Executive Summary
 
-**Visual Milestone Status**: 🔄 IN PROGRESS (3 of 4 tasks)
+**Visual Milestone Status**: 🔄 IN PROGRESS (4 of 5 tasks)
 
 | Task | Status | What It Proved |
 |------|--------|----------------|
 | PoC 0 | ✅ Complete | Grandalf (pure Python, ~0.03s) and Graphviz (~2.79s) can compute node positions for variable-sized boxes |
 | PoC 1 | ✅ Complete | Core data models, canvas rendering, and layout engines work together to produce positioned ASCII diagrams |
 | PoC 2 | ✅ Complete | SimpleRouter produces clean ASCII edge paths connecting positioned boxes with unicode-aware rendering |
-| PoC 3 | 📋 Planned | Rich Unicode edge characters (rounded corners, double lines, arrows) |
+| PoC 3 | ✅ Complete | Smart routing with box connectors, trunk-and-split, merge patterns, and configurable theme system |
+| PoC 4 | 📋 Planned | Add LICENSE, update pyproject.toml and README, create git tag for GitHub install |
 
-**Current State**: The visualflow library now has complete ASCII DAG visualization with edge routing. Production-ready Pydantic data models (`DAG`, `Node`, `Edge`, `LayoutResult`, `NodePosition`, `EdgePath`) are implemented with full validation. Two layout engines (`GrandalfEngine` for speed, `GraphvizEngine` for future edge hints) compute node positions in character coordinates. The `SimpleRouter` computes geometric edge paths (vertical and Z-shaped). The `Canvas` class renders positioned boxes with unicode support and draws edges using box-drawing characters. The public API (`render_dag()`) provides a simple interface for end-to-end rendering with automatic edge routing. All 196 tests pass with no overlapping boxes, correct level ordering, and connected edges. The library is ready for PoC 3: Rich Unicode Edge Characters.
+**Current State**: The visualflow library has complete ASCII DAG visualization with smart edge routing and a configurable theme system. Production-ready Pydantic data models (`DAG`, `Node`, `Edge`, `LayoutResult`, `NodePosition`, `EdgePath`, `EdgeTheme`) are implemented with full validation. Two layout engines (`GrandalfEngine` for speed, `GraphvizEngine` for future edge hints) compute node positions in character coordinates. The `SimpleRouter` computes geometric edge paths with smart patterns: trunk-and-split for fan-out, merge routing for fan-in, and box connectors at exit points. Four theme presets (DEFAULT, LIGHT, ROUNDED, HEAVY) are available and configurable via `.env` file with python-dotenv integration. All 293 tests pass with 0.002s render time for complex graphs. The library is ready for PoC 4: GitHub Release.
 
 ---
 
 ## Current System Architecture
 
 ```
-VISUALFLOW ARCHITECTURE (POST-POC 2)
+VISUALFLOW ARCHITECTURE (POST-POC 3)
 ===============================================================================
 
                          ┌─────────────────────────────────────┐
                          │            Public API               │
-                         │  render_dag(dag, engine, router)    │
+                         │  render_dag(dag, engine, router,    │
+                         │             theme)                  │
                          │  - DAG, Node, Edge                  │
                          │  - GrandalfEngine, GraphvizEngine   │
                          │  - SimpleRouter                     │
+                         │  - EdgeTheme, settings              │
                          │  - Canvas                           │
                          └────────────────┬────────────────────┘
                                           │
-                    ┌─────────────────────┼─────────────────────┐
-                    │                     │                     │
-                    ▼                     ▼                     ▼
-           ┌──────────────┐     ┌──────────────┐      ┌──────────────┐
-           │   models.py  │     │   engines/   │      │   routing/   │
-           │              │     │              │      │              │
-           │ • Node       │     │ • base.py    │      │ • base.py    │
-           │ • Edge       │     │   Protocol   │      │   EdgeRouter │
-           │ • DAG        │     │              │      │              │
-           │ • NodePos    │     │ • grandalf   │      │ • simple.py  │
-           │ • LayoutRes  │     │ • graphviz   │      │   SimpleRtr  │
-           │ • EdgePath   │     │              │      │              │
-           └──────────────┘     └──────────────┘      └──────────────┘
-                                       │                     │
-                         ┌─────────────┴─────────────┐       │
-                         │                           │       │
-                         ▼                           ▼       │
-                ┌────────────────┐         ┌────────────────┐│
-                │   Grandalf     │         │   Graphviz     ││
-                │   Library      │         │   CLI (dot)    ││
-                │   Pure Python  │         │   Subprocess   ││
-                │   ~0.03s       │         │   ~2.79s       ││
-                └────────────────┘         └────────────────┘│
-                                                             │
-                    ┌────────────────────────────────────────┘
-                    │
-                    ▼
-           ┌──────────────┐
-           │   render/    │
-           │              │
-           │ • canvas.py  │
-           │   Canvas     │
-           │   place_box  │
-           │   draw_edge  │
-           │   render     │
-           └──────────────┘
+           ┌──────────────────────────────┼──────────────────────────────┐
+           │                              │                              │
+           ▼                              ▼                              ▼
+  ┌──────────────┐              ┌──────────────┐               ┌──────────────┐
+  │   models.py  │              │   engines/   │               │   routing/   │
+  │              │              │              │               │              │
+  │ • Node       │              │ • base.py    │               │ • base.py    │
+  │ • Edge       │              │   Protocol   │               │   EdgeRouter │
+  │ • DAG        │              │              │               │              │
+  │ • NodePos    │              │ • grandalf   │               │ • simple.py  │
+  │ • LayoutRes  │              │ • graphviz   │               │   SmartRtr   │
+  │ • EdgePath   │              │              │               │   TrunkSplit │
+  │ • EdgeTheme  │              │              │               │   MergeRoute │
+  └──────────────┘              └──────────────┘               └──────────────┘
+           │                           │                              │
+           │            ┌──────────────┴──────────────┐               │
+           │            │                             │               │
+           ▼            ▼                             ▼               │
+  ┌──────────────┐ ┌────────────────┐       ┌────────────────┐       │
+  │ settings.py  │ │   Grandalf     │       │   Graphviz     │       │
+  │              │ │   Library      │       │   CLI (dot)    │       │
+  │ • Settings   │ │   Pure Python  │       │   Subprocess   │       │
+  │ • .env load  │ │   ~0.03s       │       │   ~2.79s       │       │
+  │ • THEME_MAP  │ └────────────────┘       └────────────────┘       │
+  └──────────────┘                                                   │
+                       ┌─────────────────────────────────────────────┘
+                       │
+                       ▼
+              ┌──────────────┐
+              │   render/    │
+              │              │
+              │ • canvas.py  │
+              │   Canvas     │
+              │   place_box  │
+              │   draw_edge  │
+              │   fix_junct  │
+              │   place_conn │
+              │   render     │
+              └──────────────┘
+
+THEME SYSTEM
+===============================================================================
+┌────────────┬──────────┬────────────┬─────────┬───────┐
+│   Theme    │ Vertical │ Horizontal │ Corners │ Arrow │
+├────────────┼──────────┼────────────┼─────────┼───────┤
+│ DEFAULT    │    |     │     -      │  ┌┐└┘   │   v   │
+│ LIGHT      │    │     │     ─      │  ┌┐└┘   │   ▼   │
+│ ROUNDED    │    │     │     ─      │  ╭╮╰╯   │   ▼   │
+│ HEAVY      │    ┃     │     ━      │  ┏┓┗┛   │   ▼   │
+└────────────┴──────────┴────────────┴─────────┴───────┘
 
 EXTERNAL DEPENDENCIES
 ===============================================================================
 • grandalf>=0.8      - Pure Python Sugiyama layout algorithm
 • pydantic>=2.0      - Data validation and serialization
 • wcwidth>=0.2       - Unicode width calculation (emoji, CJK)
+• python-dotenv      - .env file configuration loading
 • graphviz CLI       - Optional, for GraphvizEngine
 ```
 
@@ -89,18 +107,18 @@ EXTERNAL DEPENDENCIES
                         VISUAL MILESTONE PROGRESS (IN PROGRESS)
 ===============================================================================
 
-    PoC 0                   PoC 1                   PoC 2                   PoC 3
-    EXPLORATION             ARCHITECTURE            EDGE ROUTING            UNICODE
-    -------------           -------------           -------------           -------------
-    ✅ Complete             ✅ Complete             ✅ Complete             📋 Planned
+    PoC 0                   PoC 1                   PoC 2                   PoC 3                   PoC 4
+    EXPLORATION             ARCHITECTURE            EDGE ROUTING            SMART ROUTING           INTERFACE
+    -------------           -------------           -------------           -------------           -------------
+    ✅ Complete             ✅ Complete             ✅ Complete             ✅ Complete             📋 Planned
 
-    ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-    │ Engine      │         │ Foundation  │         │ Routing     │         │ Rich Edges  │
-    │ Comparison  │────────▶│ • Models    │────────▶│ • Router    │────────▶│ • Corners   │
-    │ • Grandalf  │         │ • Canvas    │         │ • Segments  │         │ • Double    │
-    │ • Graphviz  │         │ • Engines   │         │ • Unicode   │         │ • Arrows    │
-    │ • Perf test │         │ • render()  │         │ • draw_edge │         │ • Styles    │
-    └─────────────┘         └─────────────┘         └─────────────┘         └─────────────┘
+    ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
+    │ Engine      │         │ Foundation  │         │ Routing     │         │ Smart       │         │ Public API  │
+    │ Comparison  │────────▶│ • Models    │────────▶│ • Router    │────────▶│ • Connectors│────────▶│ • README    │
+    │ • Grandalf  │         │ • Canvas    │         │ • Segments  │         │ • TrunkSplit│         │ • PyPI      │
+    │ • Graphviz  │         │ • Engines   │         │ • Unicode   │         │ • MergeRoute│         │ • License   │
+    │ • Perf test │         │ • render()  │         │ • draw_edge │         │ • Themes    │         │ • Examples  │
+    └─────────────┘         └─────────────┘         └─────────────┘         └─────────────┘         └─────────────┘
 ```
 
 ---
@@ -466,9 +484,9 @@ Solution: Column tracking using wcwidth
   • render() skips empty string placeholders
 
 Example:
-  String "🚀AB" has 3 chars but 4 columns
-  Old: 🚀 at col 0, A at col 1, B at col 2 (WRONG)
-  New: 🚀 at col 0, A at col 2, B at col 3 (CORRECT)
+  String "AB" has 3 chars but 4 columns
+  Old:  at col 0, A at col 1, B at col 2 (WRONG)
+  New:  at col 0, A at col 2, B at col 3 (CORRECT)
 ```
 
 ### 4. Test Coverage Summary (PoC 2)
@@ -551,6 +569,261 @@ KEY LESSONS FROM POC 2
 
 ---
 
+## What PoC 3 Delivered: Smart Routing and Themes
+
+**Duration**: 2026-01-16T21:44:42-0800 to 2026-01-16T22:39:23-0800 (~55 minutes)
+
+PoC 3 implemented smart routing patterns for cleaner diagrams and a configurable theme system. Box connectors mark edge exit points on boxes. Trunk-and-split routing handles fan-out to same-layer targets. Merge routing handles fan-in from multiple sources. The `EdgeTheme` model provides 4 pre-built themes (DEFAULT, LIGHT, ROUNDED, HEAVY) configurable via `.env` file with python-dotenv integration. The `fix_junctions()` post-processor ensures correct junction characters. All 293 tests pass.
+
+### 1. Smart Routing Patterns
+
+```
+SMART ROUTING ARCHITECTURE
+==================================================================
+
+                    ┌────────────────────────┐
+                    │     SimpleRouter       │
+                    │     (Enhanced)         │
+                    │                        │
+                    │ route(positions, edges)│
+                    │   -> list[EdgePath]    │
+                    └───────────┬────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │                       │                       │
+        ▼                       ▼                       ▼
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│ _route_basic  │      │ _route_trunk_ │      │ _route_merge_ │
+│               │      │    split      │      │    edges      │
+│ • Vertical    │      │               │      │               │
+│ • Z-shape     │      │ • Shared trunk│      │ • Converge    │
+│ • Single edge │      │ • Split line  │      │ • Single drop │
+└───────────────┘      │ • Same layer  │      │ • Fan-in      │
+                       └───────────────┘      └───────────────┘
+
+PATTERN EXAMPLES
+==================================================================
+
+Trunk-and-Split (Fan-out to same layer):
+    +-------+
+    | Root  |
+    +---┬---+           <- single connector at center
+        |               <- shared trunk
+   -----┴-----          <- split junction
++---+     +---+
+| A |     | B |
++---+     +---+
+
+Merge Routing (Fan-in from multiple sources):
++---+     +---+
+| A |     | B |
++-┬-+     +-┬-+
+  |         |
+  ----┬------          <- merge junction
+      |
+      v
+  +-------+
+  | Target|
+  +-------+
+```
+
+### 2. Box Connector Placement
+
+```
+BOX CONNECTOR SYSTEM
+==================================================================
+
+Placement: After boxes, before edge drawing
+Character: ┬ (T-junction pointing down)
+
+Exit Point Calculation:
+  • 1 exit:  Center of box bottom
+  • 2 exits: 1/3 and 2/3 spacing (balanced)
+  • N exits: Evenly spaced across box bottom
+
+Narrow Box Handling:
+  • Clamps to center when insufficient space
+  • Maintains logical correctness over visual overlap
+
+Canvas Methods:
+  • place_box_connector(x, y) - Single connector
+  • place_box_connectors(positions, edges) - All connectors
+```
+
+### 3. Theme System
+
+```
+THEME SYSTEM ARCHITECTURE
+==================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│  EdgeTheme (Pydantic Model)                                     │
+│  ├── vertical: str         # | or │ or ┃                        │
+│  ├── horizontal: str       # - or ─ or ━                        │
+│  ├── corner_tl: str        # ┌ or ╭ or ┏                        │
+│  ├── corner_tr: str        # ┐ or ╮ or ┓                        │
+│  ├── corner_bl: str        # └ or ╰ or ┗                        │
+│  ├── corner_br: str        # ┘ or ╯ or ┛                        │
+│  ├── tee_down: str         # ┬ or ┳                             │
+│  ├── tee_up: str           # ┴ or ┻                             │
+│  ├── tee_right: str        # ├ or ┣                             │
+│  ├── tee_left: str         # ┤ or ┫                             │
+│  ├── cross: str            # ┼ or ╋                             │
+│  └── arrow_down: str       # v or ▼                             │
+└─────────────────────────────────────────────────────────────────┘
+
+PRE-BUILT THEMES
+==================================================================
+
+┌────────────┬──────────┬────────────┬─────────┬───────┐
+│   Theme    │ Vertical │ Horizontal │ Corners │ Arrow │
+├────────────┼──────────┼────────────┼─────────┼───────┤
+│ DEFAULT    │    |     │     -      │  ┌┐└┘   │   v   │
+│ LIGHT      │    │     │     ─      │  ┌┐└┘   │   ▼   │
+│ ROUNDED    │    │     │     ─      │  ╭╮╰╯   │   ▼   │
+│ HEAVY      │    ┃     │     ━      │  ┏┓┗┛   │   ▼   │
+└────────────┴──────────┴────────────┴─────────┴───────┘
+
+CONFIGURATION
+==================================================================
+
+Via .env file:
+  VISUALFLOW_THEME=rounded
+
+Via settings:
+  from visualflow import settings, ROUNDED_THEME
+  settings.theme = ROUNDED_THEME
+
+Via render_dag():
+  render_dag(dag, theme=HEAVY_THEME)  # Override per-call
+```
+
+### 4. Junction Fix Post-Processing
+
+```
+JUNCTION FIX SYSTEM
+==================================================================
+
+Problem: Drawing edges sequentially may place wrong junction chars
+         (e.g., corner when T-junction needed)
+
+Solution: fix_junctions() post-processing
+  • Scans all junction characters after edge drawing
+  • Checks actual neighbors (up, down, left, right)
+  • Replaces with correct character based on connections
+
+Character Selection:
+  • 4 connections → cross (┼)
+  • 3 connections → appropriate tee (┬┴├┤)
+  • 2 connections → appropriate corner (┌┐└┘)
+  • 1 connection → line (| or -)
+```
+
+### 5. Test Coverage Summary (PoC 3)
+
+```
+TEST COVERAGE (293 tests passing)
+==================================================================
+
+Test File                 Tests   New in PoC 3   Coverage
+----------------------------------------------------------------
+test_poc3_routing.py       50     +50           Smart routing tests
+test_fanout_patterns.py    16     +16           Fan-out pattern tests
+test_core_milestone.py      4     +4            Milestone validation
+test_canvas.py             25     (updated)     Theme + connectors
+test_routing.py             9     (updated)     Extended routing
+test_integration.py        29     (updated)     Theme integration
+test_real_diagrams.py      27     (updated)     Real diagram tests
+[other existing]          133      -            Unchanged
+----------------------------------------------------------------
+TOTAL                     293     +70           All passing
+
+Performance: 0.002s for complex_graph (unchanged)
+```
+
+### 6. Visual Output Examples
+
+```
+SIMPLE CHAIN WITH BOX CONNECTOR
+==================================================================
+
+    +---------------+
+    |     Task A    |
+    |               |
+    +-------┬-------+
+            |
+            v
+    +---------------+
+    |     Task B    |
+    |               |
+    +---------------+
+
+DIAMOND PATTERN WITH SMART ROUTING
+==================================================================
+
+                     +-------------+
+                     |    Start    |
+                     |             |
+                     +------┬------+
+                            |
+           -----------------┴------------------
+    +-------------+                    +-------------+
+    |     Left    |                    |    Right    |
+    |             |                    |             |
+    +------┬------+                    +------┬------+
+           -----------------┬------------------
+                            v
+                     +-------------+
+                     |     End     |
+                     |             |
+                     +-------------+
+```
+
+### 7. Lessons Learned
+
+```
+KEY LESSONS FROM POC 3
+==================================================================
+
+1. Render pipeline order matters - The sequence boxes -> connectors ->
+   edges ensures proper layering; connectors must be placed after
+   boxes but before edge drawing to prevent overwriting.
+
+2. Connector and routing logic must match - Placing connectors at
+   multiple exit points while routing edges from center creates
+   visual mismatch. Both must use the same decision logic.
+
+3. Thirds spacing for two exits - For two exit points from a box,
+   using 1/3 and 2/3 positioning produces better visual balance.
+
+4. Graceful degradation for narrow boxes - When a box is too narrow
+   for multiple exit points, placing all exits at center maintains
+   logical correctness even though they overlap visually.
+
+5. Y midpoint prevents edge-box overlap - For merge routing,
+   calculating the merge row at the Y midpoint between lowest source
+   bottom and target top ensures edges don't overlap with boxes.
+
+6. Edge classification by target incoming count - Checking how many
+   edges point to each target cleanly separates independent edges
+   from merge edges without complex graph analysis.
+```
+
+### PoC 3 Artifacts
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| `src/visualflow/routing/simple.py` | SimpleRouter (smart routing) | 667 |
+| `src/visualflow/render/canvas.py` | Canvas (connectors + themes) | 556 |
+| `src/visualflow/models.py` | Models (EdgeTheme added) | 175 |
+| `src/visualflow/settings.py` | Global settings + .env loading | 79 |
+| `src/visualflow/__init__.py` | Public API (themes exported) | 99 |
+| `tests/test_poc3_routing.py` | PoC 3 routing tests | 1127 |
+| `tests/test_fanout_patterns.py` | Fan-out pattern tests | 113 |
+| `tests/test_core_milestone.py` | Milestone validation tests | 111 |
+
+---
+
 ## What's Built (Visual In Progress)
 
 ```
@@ -563,7 +836,8 @@ MILESTONE COMPLETION MAP
 ├── DAG container with add/get methods
 ├── NodePosition with integer coordinates
 ├── LayoutResult with positions + canvas size
-└── EdgePath with segments for routing
+├── EdgePath with segments for routing
+└── EdgeTheme for configurable edge characters
 
 ✅ Layout Engines
 ├── LayoutEngine Protocol (structural typing)
@@ -575,39 +849,55 @@ MILESTONE COMPLETION MAP
 
 ✅ Edge Routing
 ├── EdgeRouter Protocol (structural typing)
-├── SimpleRouter (geometric routing)
-├── Vertical line for aligned nodes
-├── Z-shape for offset nodes
+├── SimpleRouter (smart routing)
+├── Basic routing (vertical, Z-shape)
+├── Trunk-and-split for fan-out (1->N same layer)
+├── Merge routing for fan-in (N->1)
+├── Exit point calculation (1/3, 2/3 spacing)
 └── Integer coordinate segments
 
 ✅ Canvas Rendering
 ├── 2D character grid with Pydantic model
 ├── place_box() with unicode support (emoji, CJK)
-├── draw_edge() with box-drawing characters
+├── place_box_connectors() for exit points
+├── draw_edge() with theme-aware characters
+├── fix_junctions() post-processing
 ├── put_char()/get_char() for single characters
 ├── render() with trailing space stripping
 └── Wide character placeholder handling
 
+✅ Theme System
+├── EdgeTheme Pydantic model
+├── 4 pre-built themes (DEFAULT, LIGHT, ROUNDED, HEAVY)
+├── .env configuration via VISUALFLOW_THEME
+├── python-dotenv integration
+├── Global settings.theme
+└── Per-call theme override
+
 ✅ Public API
-├── render_dag(dag, engine=None, router=None) helper
+├── render_dag(dag, engine, router, theme) helper
 ├── All models exported from package root
 ├── Both engines exported
 ├── Router protocol and SimpleRouter exported
+├── All themes exported
+├── Settings exported
 └── Canvas exported
 
 ✅ Test Coverage
-├── 196 tests passing
+├── 293 tests passing
 ├── 7 fixture patterns covering edge cases
 ├── No-overlap verification tests
 ├── Level ordering verification tests
 ├── Edge routing verification tests
+├── Smart routing pattern tests
+├── Theme integration tests
 └── Visual inspection tests
 
-📋 Pending (PoC 3)
-├── Rich Unicode edge characters
-├── Rounded corners (╭╮╰╯)
-├── Double lines (║═)
-└── Directional arrows (→▼)
+📋 Pending (PoC 4)
+├── Add LICENSE file (MIT)
+├── Update pyproject.toml (authors, license)
+├── Update README (GitHub install, themes, .env config)
+└── Create git tag v0.1.0
 ```
 
 ---
@@ -626,27 +916,34 @@ MILESTONE COMPLETION MAP
 | **SimpleRouter default** | PoC 2 | Automatic edge routing when DAG has edges |
 | **Offset disconnected components** | PoC 1 | Prevents overlapping boxes in standalone fixtures |
 | **Empty string as wide-char placeholder** | PoC 2 | Simpler than sentinel values, render() filters naturally |
-| **Simple ASCII chars for edges** | PoC 2 | Focus on routing correctness; rich unicode in PoC 3 |
+| **Single connector for trunk-split** | PoC 3 | Connector and routing must use same decision logic |
+| **Thirds spacing for two exits** | PoC 3 | 1/3 and 2/3 gives better visual balance than halves |
+| **fix_junctions() post-processing** | PoC 3 | Ensures correct junction characters after sequential drawing |
+| **EdgeTheme Pydantic model** | PoC 3 | Type-safe theme configuration with validation |
+| **python-dotenv integration** | PoC 3 | Standard .env configuration pattern |
 
 ---
 
 ## Next Steps
 
-**Visual Milestone: IN PROGRESS** (3 of 4 tasks complete)
+**Visual Milestone: IN PROGRESS** (4 of 5 tasks complete)
 
-PoC 0 (Engine Exploration), PoC 1 (Architecture Foundation), and PoC 2 (Edge Routing) are complete. The library can render complete ASCII DAG diagrams with positioned boxes connected by edges.
+PoC 0 (Engine Exploration), PoC 1 (Architecture Foundation), PoC 2 (Edge Routing), and PoC 3 (Smart Routing and Themes) are complete. The library can render complete ASCII DAG diagrams with positioned boxes, smart edge routing, and configurable themes.
 
-**Next Task: PoC 3 - Rich Unicode Edge Characters**
-1. Implement rich unicode edge characters (rounded corners, double lines)
-2. Add directional arrow options (→▼▶)
-3. Support configurable edge styles via RenderStyle enum
-4. Visual polish for production-quality diagrams
+**Next Task: PoC 4 - GitHub Release**
+1. Add LICENSE file (MIT)
+2. Update pyproject.toml (authors, license, keywords)
+3. Update README (GitHub install, themes, .env config)
+4. Create git tag: `git tag -a v0.1.0 -m "Initial release"`
+5. Push tag: `git push origin v0.1.0`
+
+**Install via**: `uv add git+https://github.com/creational-ai/visualflow.git`
 
 **Future Considerations:**
 - Graphviz spline hints for smoother routing
 - Edge collision avoidance for complex graphs
 - Performance optimization for large graphs (>100 nodes)
-- Mission Control integration
+- Entry connectors on target boxes
 
 ---
 
@@ -661,6 +958,9 @@ PoC 0 (Engine Exploration), PoC 1 (Architecture Foundation), and PoC 2 (Edge Rou
 - [PoC 2 Overview](./visual-poc2-overview.md)
 - [PoC 2 Implementation](./visual-poc2-implementation.md)
 - [PoC 2 Results](./visual-poc2-results.md)
+- [PoC 3 Overview](./visual-poc3-overview.md)
+- [PoC 3 Implementation](./visual-poc3-implementation.md)
+- [PoC 3 Results](./visual-poc3-results.md)
 - [Architecture](./architecture.md)
 - [PoC Design](./visual-poc-design.md)
 - [Visual Milestone](./visual-milestone.md)
