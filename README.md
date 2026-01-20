@@ -119,7 +119,7 @@ VISUALFLOW_THEME=ROUNDED
                                                                           └─────────────────────────┘
 ```
 
-*This is the actual visual milestone from Mission Control, rendered by visualflow from [docs/visual-tasks.json](docs/visual-tasks.json).*
+*This is a subset of actual data, rendered by visualflow from [docs/visual-tasks.json](docs/visual-tasks.json).*
 
 ## Installation
 
