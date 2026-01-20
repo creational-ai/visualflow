@@ -285,3 +285,116 @@ class TestVisualInspection:
         print("=" * 60)
         print(result)
         print("=" * 60)
+
+
+class TestRenderDagOrganization:
+    """Tests for render_dag smart organization behavior."""
+
+    def test_mixed_dag_standalones_after_connected(self) -> None:
+        """Standalones should appear after connected nodes in output."""
+        from visualflow import render_dag
+        from visualflow.models import DAG
+
+        dag = DAG()
+        # Connected pair
+        dag.add_node("a", "+---+\n| A |\n+---+")
+        dag.add_node("b", "+---+\n| B |\n+---+")
+        dag.add_edge("a", "b")
+        # Standalone
+        dag.add_node("x", "+---+\n| X |\n+---+")
+
+        result = render_dag(dag)
+
+        # Both should be present
+        assert "A" in result
+        assert "B" in result
+        assert "X" in result
+
+        # Find positions in output
+        a_pos = result.find("A")
+        b_pos = result.find("B")
+        x_pos = result.find("X")
+
+        # X (standalone) should appear after connected nodes
+        # Since output is line-by-line, standalone section is at bottom
+        assert x_pos > a_pos or x_pos > b_pos
+
+    def test_multiple_subgraphs_largest_first(self) -> None:
+        """Larger subgraphs should appear before smaller ones."""
+        from visualflow import render_dag
+        from visualflow.models import DAG
+
+        dag = DAG()
+        # Small subgraph (2 nodes)
+        dag.add_node("x", "+---+\n| X |\n+---+")
+        dag.add_node("y", "+---+\n| Y |\n+---+")
+        dag.add_edge("x", "y")
+
+        # Large subgraph (3 nodes)
+        dag.add_node("a", "+---+\n| A |\n+---+")
+        dag.add_node("b", "+---+\n| B |\n+---+")
+        dag.add_node("c", "+---+\n| C |\n+---+")
+        dag.add_edge("a", "b")
+        dag.add_edge("b", "c")
+
+        result = render_dag(dag)
+
+        # Large subgraph (A-B-C) should appear before small (X-Y)
+        a_pos = result.find("A")
+        x_pos = result.find("X")
+        assert a_pos < x_pos, "Larger subgraph should render first"
+
+    def test_all_connected_single_output(self) -> None:
+        """All-connected DAG should render as single block."""
+        from visualflow import render_dag
+        from tests.fixtures import create_simple_chain
+
+        dag = create_simple_chain()
+        result = render_dag(dag)
+
+        # Should have all nodes
+        assert "Task A" in result
+        assert "Task B" in result
+        assert "Task C" in result
+
+    def test_all_standalones_grouped(self) -> None:
+        """All-standalone DAG should render all nodes."""
+        from visualflow import render_dag
+        from visualflow.models import DAG
+
+        dag = DAG()
+        dag.add_node("a", "+---+\n| A |\n+---+")
+        dag.add_node("b", "+---+\n| B |\n+---+")
+        dag.add_node("c", "+---+\n| C |\n+---+")
+
+        result = render_dag(dag)
+        assert "A" in result
+        assert "B" in result
+        assert "C" in result
+
+    def test_existing_fixtures_still_work(self) -> None:
+        """All existing fixtures should still render correctly."""
+        from visualflow import render_dag
+        from tests.fixtures import (
+            create_simple_chain,
+            create_diamond,
+            create_wide_fanout,
+            create_merge_branch,
+            create_skip_level,
+            create_standalone,
+            create_complex_graph,
+        )
+
+        fixtures = [
+            ("simple_chain", create_simple_chain()),
+            ("diamond", create_diamond()),
+            ("wide_fanout", create_wide_fanout()),
+            ("merge_branch", create_merge_branch()),
+            ("skip_level", create_skip_level()),
+            ("standalone", create_standalone()),
+            ("complex_graph", create_complex_graph()),
+        ]
+
+        for name, dag in fixtures:
+            result = render_dag(dag)
+            assert result, f"{name} should produce output"

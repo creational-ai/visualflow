@@ -847,7 +847,7 @@ PYPROJECT.TOML ADDITIONS
 [project]
 license = { file = "LICENSE" }
 authors = [
-    { name = "Doc Chang" },
+    { name = "Dominic Chang" },
 ]
 keywords = ["ascii", "dag", "diagram", "graph", "visualization", "terminal"]
 ```

@@ -55,7 +55,7 @@ Create `/Users/docchang/Development/visualflow/LICENSE`:
 ```
 MIT License
 
-Copyright (c) 2026 Doc Chang
+Copyright (c) 2026 Dominic Chang
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -86,7 +86,7 @@ Add to `[project]` section:
 ```toml
 license = { file = "LICENSE" }
 authors = [
-    { name = "Doc Chang" },
+    { name = "Dominic Chang" },
 ]
 keywords = ["ascii", "dag", "diagram", "graph", "visualization", "terminal"]
 ```

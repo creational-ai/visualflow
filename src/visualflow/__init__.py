@@ -12,6 +12,7 @@ from visualflow.engines import LayoutEngine, GrandalfEngine, GraphvizEngine
 from visualflow.render import Canvas
 from visualflow.routing import EdgeRouter, SimpleRouter
 from visualflow.settings import settings
+from visualflow.partition import partition_dag
 
 __version__ = "0.1.0"
 
@@ -23,6 +24,10 @@ def render_dag(
     theme: EdgeTheme | None = None,
 ) -> str:
     """Render a DAG to ASCII string.
+
+    Automatically organizes output:
+    - Connected subgraphs at top (largest first)
+    - Standalone nodes grouped at bottom
 
     Args:
         dag: The directed acyclic graph to render
@@ -38,6 +43,44 @@ def render_dag(
     if theme is None:
         theme = settings.theme
 
+    # Partition DAG into connected subgraphs and standalones
+    subgraphs, standalones = partition_dag(dag)
+
+    rendered_parts: list[str] = []
+
+    # Render connected subgraphs (largest first)
+    for subgraph in subgraphs:
+        rendered = _render_single_dag(subgraph, engine, router, theme)
+        if rendered:
+            rendered_parts.append(rendered)
+
+    # Render standalones (if any)
+    if standalones.nodes:
+        rendered = _render_single_dag(standalones, engine, router, theme)
+        if rendered:
+            rendered_parts.append(rendered)
+
+    # Join with blank line separator
+    return "\n".join(rendered_parts)
+
+
+def _render_single_dag(
+    dag: DAG,
+    engine: LayoutEngine,
+    router: EdgeRouter | None,
+    theme: EdgeTheme,
+) -> str:
+    """Render a single DAG (internal helper).
+
+    Args:
+        dag: The DAG to render
+        engine: Layout engine to use
+        router: Edge router to use
+        theme: Edge theme for characters
+
+    Returns:
+        Multi-line ASCII string representation
+    """
     # Compute layout
     layout = engine.compute(dag)
 
@@ -95,4 +138,6 @@ __all__ = [
     # Rendering
     "Canvas",
     "render_dag",
+    # Partitioning
+    "partition_dag",
 ]

@@ -216,12 +216,66 @@ settings.theme = HEAVY_THEME
 settings.reset()
 ```
 
+## Graph Organization
+
+`render_dag()` automatically organizes mixed graphs:
+- Connected subgraphs render first (largest first)
+- Standalone nodes render at the bottom
+
+```python
+from visualflow import DAG, render_dag
+
+dag = DAG()
+
+# Connected subgraph (A -> B -> C)
+dag.add_node('a', '┌───┐\n│ A │\n└───┘')
+dag.add_node('b', '┌───┐\n│ B │\n└───┘')
+dag.add_node('c', '┌───┐\n│ C │\n└───┘')
+dag.add_edge('a', 'b')
+dag.add_edge('b', 'c')
+
+# Standalone nodes (no edges)
+dag.add_node('x', '┌───┐\n│ X │\n└───┘')
+dag.add_node('y', '┌───┐\n│ Y │\n└───┘')
+
+print(render_dag(dag))
+# Connected chain (A->B->C) renders first
+# Standalones (X, Y) render at bottom
+```
+
+### Advanced: partition_dag()
+
+For custom rendering of disconnected components:
+
+```python
+from visualflow import DAG, partition_dag
+
+dag = DAG()
+# ... add nodes and edges ...
+
+# Returns (list[DAG], DAG)
+# - subgraphs: connected components sorted by size (largest first)
+# - standalones: DAG containing only standalone nodes
+subgraphs, standalones = partition_dag(dag)
+
+# Custom rendering logic
+for i, subgraph in enumerate(subgraphs):
+    print(f"=== Subgraph {i+1} ({len(subgraph.nodes)} nodes) ===")
+    print(render_dag(subgraph))
+
+if standalones.nodes:
+    print("=== Standalone Nodes ===")
+    print(render_dag(standalones))
+```
+
 ## Features
 
 - Variable-sized boxes with any content
 - Unicode support (emoji, CJK characters)
 - Box connectors that integrate edges with box borders
 - T-junctions for merging/splitting edges
+- Smart graph organization (connected subgraphs first, standalones at bottom)
+- `partition_dag()` for advanced custom rendering
 - 4 built-in themes (DEFAULT, LIGHT, ROUNDED, HEAVY)
 - Environment-based configuration via `.env`
 - Automatic layout via Sugiyama algorithm (Grandalf)

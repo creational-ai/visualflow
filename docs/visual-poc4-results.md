@@ -65,7 +65,7 @@ From `docs/visual-poc4-implementation.md`:
 
 **Implementation**:
 - ✅ Created `/Users/docchang/Development/visualflow/LICENSE` with MIT license text
-- ✅ Copyright set to "2026 Doc Chang"
+- ✅ Copyright set to "2026 Dominic Chang"
 
 **Test Results**: N/A (documentation step)
 
@@ -85,7 +85,7 @@ From `docs/visual-poc4-implementation.md`:
 
 **Implementation**:
 - ✅ Added `license = { file = "LICENSE" }`
-- ✅ Added `authors = [{ name = "Doc Chang" }]`
+- ✅ Added `authors = [{ name = "Dominic Chang" }]`
 - ✅ Added `keywords = ["ascii", "dag", "diagram", "graph", "visualization", "terminal"]`
 
 **Test Results**: N/A (metadata only)
