@@ -4,7 +4,7 @@ ASCII DAG visualization library for rendering directed acyclic graphs as text di
 
 ## Visual Milestone Example
 
-Boxes can contain anything: status indicators, bullet points, emoji (✅), Unicode symbols (•, ─, │), multi-line content. This is the actual task data from this project:
+Boxes can contain anything: status indicators, bullet points, emoji (✅), Unicode symbols (•, ─, │), multi-line content.
 
 ```bash
 # .env
