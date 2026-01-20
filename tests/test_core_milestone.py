@@ -54,3 +54,46 @@ class TestCoreMilestone:
 
         # Verify standalone tasks also rendered (if any exist)
         # These appear at the bottom automatically
+
+    def test_render_demo(self, core_tasks) -> None:
+        """Render a curated subset for README demo (cleaner visual)."""
+        # Exclude these for a cleaner demo diagram
+        exclude_slugs = {
+            "poc-5",           # Workflow (leaf node, clutters left side)
+            "poc-14",          # Integration & Docs (extends chain too long)
+            "hierarchy-a",     # Hierarchy refactors (extends chain)
+            "hierarchy-b",
+            "schema-cleanup",
+            "structured-text-fields",  # Standalones
+            "delete-tools",
+        }
+
+        dag = DAG()
+
+        # Add filtered nodes
+        for task in core_tasks:
+            if task["slug"] not in exclude_slugs and task["diagram"]:
+                dag.add_node(task["slug"], task["diagram"])
+
+        # Add edges (only if both nodes exist)
+        for task in core_tasks:
+            if task["slug"] in exclude_slugs or task["slug"] not in dag.nodes:
+                continue
+            if task["depends_on"]:
+                for dep_slug in task["depends_on"]:
+                    if dep_slug not in exclude_slugs and dep_slug in dag.nodes:
+                        dag.add_edge(dep_slug, task["slug"])
+
+        result = render_dag(dag)
+
+        print("\n" + "=" * 100)
+        print(f"DEMO DIAGRAM ({settings.theme.__class__.__name__}): {len(dag.nodes)} tasks, {len(dag.edges)} edges")
+        print("=" * 100)
+        print(result)
+        print("=" * 100)
+
+        # Verify key content
+        assert "PoC 1" in result
+        assert "SCHEMA" in result
+        assert "PoC 13" in result
+        assert "MILESTONE TOOLS" in result

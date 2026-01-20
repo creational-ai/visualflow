@@ -12,111 +12,111 @@ VISUALFLOW_THEME=ROUNDED
 ```
 
 ```
-                                                                            ┌─────────────────────────┐                                            ┌─────────────────────────┐
-                                                                            │        PoC 2            │                                            │        PoC 1            │
-                                                                            │        SERVER           │                                            │        SCHEMA           │
-                                                                            │      ✅ Complete        │                                            │      ✅ Complete        │
-                                                                            │                         │                                            │                         │
-                                                                            │ Transport               │                                            │ Database                │
-                                                                            │   • STDIO (prod)        │                                            │   • projects (18 cols)  │
-                                                                            │   • HTTP (test)         │                                            │   • project_history     │
-                                                                            │                         │                                            │                         │
-                                                                            │ Tools                   │                                            │ Infrastructure          │
-                                                                            │   • ping                │                                            │   • config.py           │
-                                                                            │   • list_projects       │                                            │   • db.py (client)      │
-                                                                            └────────────┬────────────┘                                            │   • seed_data.py        │
-                                                                                         │                                                         └────────────┬────────────┘
-                                                                                         │                                                                      │
-                                                                                         │                                                                      │
-                                                                                         ├──────────────────────────────────────────────────────────────────────┤
-                                                                                         │                                                                      │
-                                                                                         │                                                                      │
-                                                                                         ▼                                                                      ▼
-                                                                            ┌─────────────────────────┐                                            ┌─────────────────────────┐
-                                                                            │        PoC 3            │                                            │        PoC 8            │
-                                                                            │         CRUD            │                                            │      ABSTRACTION        │
-                                                                            │      ✅ Complete        │                                            │      ✅ Complete        │
-                                                                            │                         │                                            │                         │
-                                                                            │ Tools                   │                                            │ Adapters                │
-                                                                            │   • list_projects       │                                            │   • SupabaseAdapter     │
-                                                                            │   • get_project         │                                            │   • PostgresAdapter     │
-                                                                            │   • create_project      │                                            │                         │
-                                                                            │   • update_project      │                                            │ Patterns                │
-                                                                            │                         │                                            │   • Protocol typing     │
-                                                                            │ Patterns                │                                            │   • Dual-function       │
-                                                                            │   • ToolResponse<T>     │                                            │   • Parametrized tests  │
-                                                                            │   • Auto-slug           │                                            └────────────┬────────────┘
-                                                                            └────────────┬────────────┘                                                         │
-                                                                                         │                                                                      │
-                                                                                         │                                                                      │
-                  ╭───────────────────────────────────────────────┬──────────────────────┴───────────────────────╮                                              │
-                  │                                               │                                              │                                              │
-                  │                                               │                                              │                                              │
-                  ▼                                               │                                              ▼                                              ▼
-    ┌───────────────────────────┐                                 ▼                                 ┌─────────────────────────┐                    ┌─────────────────────────┐
-    │         PoC 5             │                    ┌─────────────────────────┐                    │      BUG FIXES          │                    │        PoC 9            │
-    │        WORKFLOW           │                    │        PoC 6            │                    │     2025-12-29          │                    │       MIGRATION         │
-    │       ✅ Complete         │                    │       ANALYSIS          │                    │      ✅ Complete        │                    │      ✅ Complete        │
-    │                           │                    │      ✅ Complete        │                    │                         │                    │                         │
-    │ Tools                     │                    │                         │                    │ Bug 1: list_projects    │                    │ Tools Migrated          │
-    │   • move_to_backburner    │                    │ Tools                   │                    │   • Default "active"→   │                    │   • list_projects       │
-    │   • activate_project      │                    │   • get_portfolio_summary│                   │     None (MCP protocol) │                    │   • get_project         │
-    │   • complete_project      │                    │   • get_blocked_projects│                    │                         │                    │   • create_project      │
-    │   • kill_project          │                    │   • search_projects     │                    │ Bug 2: search_projects  │                    │   • update_project      │
-    │   • clear_blocker         │                    │                         │                    │   • Added updated_at    │                    │   • analysis tools      │
-    │                           │                    │ Patterns                │                    │   • Added dev_updated_at│                    │                         │
-    │ Pattern                   │                    │   • Pydantic models     │                    │                         │                    │ Patterns                │
-    │   • Thin CRUD wrappers    │                    │   • Client-side search  │                    │ Bug 3: get_blocked      │                    │   • model_validate()    │
-    │   • Idempotent ops        │                    └─────────────────────────┘                    │   • Already fixed       │                    │   • @computed_field     │
-    └───────────────────────────┘                                                                   └─────────────────────────┘                    │   • Parametrized tests  │
-                                                                                                                                                   └────────────┬────────────┘
-                                                                                                                                                                │
-                                                                                                                                                                │
-                                                                                         ╭──────────────────────────────────────────────┬───────────────────────┴──────────────────────╮
-                                                                                         │                                              │                                              │
-                                                                                         │                                              │                                              │
-                                                                                         │                                              │                                              ▼
-                                                                                         │                                              │                                 ┌─────────────────────────┐
-                                                                                         │                                              ▼                                 │   PYDANTIC REFACTOR     │
-                                                                                         ▼                                 ┌─────────────────────────┐                    │      ✅ Complete        │
-                                                                            ┌─────────────────────────┐                    │        PoC 12           │                    │                         │
-                                                                            │        PoC 11           │                    │    MILESTONES DB        │                    │ Models Created          │
-                                                                            │      DEV ACTIVITY       │                    │      ✅ Complete        │                    │   • Project             │
-                                                                            │      ✅ Complete        │                    │                         │                    │   • ProjectSummary      │
-                                                                            │                         │                    │ Database                │                    │   • ToolResponse[T]     │
-                                                                            │ Field                   │                    │   • milestones table    │                    │   • ErrorDetail         │
-                                                                            │   • dev_updated_at      │                    │   • RLS policies        │                    │                         │
-                                                                            │                         │                    │   • CASCADE DELETE      │                    │ Enums                   │
-                                                                            │ Updated                 │                    │                         │                    │   • ProjectStatus       │
-                                                                            │   • Project model       │                    │ Models                  │                    │   • Priority            │
-                                                                            │   • ProjectSummary      │                    │   • Milestone           │                    │                         │
-                                                                            │   • list_projects       │                    │   • MilestoneSummary    │                    │ Benefits                │
-                                                                            │   • update_project      │                    │   • ActionableMilestone │                    │   • Type safety         │
-                                                                            └─────────────────────────┘                    └────────────┬────────────┘                    │   • Auto validation     │
-                                                                                                                                        │                                 │   • IDE autocomplete    │
-                                                                                                                                        │                                 │   • Self-documenting    │
-                                                                                                                                        │                                 └─────────────────────────┘
-                                                                                                                                        │
-                                                                                                                                        │
-                                                                                                                                        │
-                                                                                                                                        │
-                                                                                                                                        │
-                                                                                                                                        ▼
-                                                                                                                           ┌─────────────────────────┐
-                                                                                                                           │        PoC 13           │
-                                                                                                                           │   MILESTONE TOOLS       │
-                                                                                                                           │      ✅ Complete        │
-                                                                                                                           │                         │
-                                                                                                                           │ CRUD Tools              │
-                                                                                                                           │   • list_milestones     │
-                                                                                                                           │   • get_milestone       │
-                                                                                                                           │   • create_milestone    │
-                                                                                                                           │   • update_milestone    │
-                                                                                                                           │                         │
-                                                                                                                           │ Workflow Tools          │
-                                                                                                                           │   • complete_milestone  │
-                                                                                                                           │   • get_next_actions    │
-                                                                                                                           └────────────┬────────────┘
+                           ┌─────────────────────────┐                                            ┌─────────────────────────┐
+                           │        PoC 2            │                                            │        PoC 1            │
+                           │        SERVER           │                                            │        SCHEMA           │
+                           │      ✅ Complete        │                                            │      ✅ Complete        │
+                           │                         │                                            │                         │
+                           │ Transport               │                                            │ Database                │
+                           │   • STDIO (prod)        │                                            │   • projects (18 cols)  │
+                           │   • HTTP (test)         │                                            │   • project_history     │
+                           │                         │                                            │                         │
+                           │ Tools                   │                                            │ Infrastructure          │
+                           │   • ping                │                                            │   • config.py           │
+                           │   • list_projects       │                                            │   • db.py (client)      │
+                           └────────────┬────────────┘                                            │   • seed_data.py        │
+                                        │                                                         └────────────┬────────────┘
+                                        │                                                                      │
+                                        │                                                                      │
+                                        ├──────────────────────────────────────────────────────────────────────┤
+                                        │                                                                      │
+                                        │                                                                      │
+                                        ▼                                                                      ▼
+                           ┌─────────────────────────┐                                            ┌─────────────────────────┐
+                           │        PoC 3            │                                            │        PoC 8            │
+                           │         CRUD            │                                            │      ABSTRACTION        │
+                           │      ✅ Complete        │                                            │      ✅ Complete        │
+                           │                         │                                            │                         │
+                           │ Tools                   │                                            │ Adapters                │
+                           │   • list_projects       │                                            │   • SupabaseAdapter     │
+                           │   • get_project         │                                            │   • PostgresAdapter     │
+                           │   • create_project      │                                            │                         │
+                           │   • update_project      │                                            │ Patterns                │
+                           │                         │                                            │   • Protocol typing     │
+                           │ Patterns                │                                            │   • Dual-function       │
+                           │   • ToolResponse<T>     │                                            │   • Parametrized tests  │
+                           │   • Auto-slug           │                                            └────────────┬────────────┘
+                           └────────────┬────────────┘                                                         │
+                                        │                                                                      │
+                                        │                                                                      │
+                 ╭──────────────────────┴───────────────────────╮                                              │
+                 │                                              │                                              │
+                 │                                              │                                              │
+                 │                                              ▼                                              ▼
+                 ▼                                 ┌─────────────────────────┐                    ┌─────────────────────────┐
+    ┌─────────────────────────┐                    │      BUG FIXES          │                    │        PoC 9            │
+    │        PoC 6            │                    │     2025-12-29          │                    │       MIGRATION         │
+    │       ANALYSIS          │                    │      ✅ Complete        │                    │      ✅ Complete        │
+    │      ✅ Complete        │                    │                         │                    │                         │
+    │                         │                    │ Bug 1: list_projects    │                    │ Tools Migrated          │
+    │ Tools                   │                    │   • Default "active"→   │                    │   • list_projects       │
+    │   • get_portfolio_summary│                   │     None (MCP protocol) │                    │   • get_project         │
+    │   • get_blocked_projects│                    │                         │                    │   • create_project      │
+    │   • search_projects     │                    │ Bug 2: search_projects  │                    │   • update_project      │
+    │                         │                    │   • Added updated_at    │                    │   • analysis tools      │
+    │ Patterns                │                    │   • Added dev_updated_at│                    │                         │
+    │   • Pydantic models     │                    │                         │                    │ Patterns                │
+    │   • Client-side search  │                    │ Bug 3: get_blocked      │                    │   • model_validate()    │
+    └─────────────────────────┘                    │   • Already fixed       │                    │   • @computed_field     │
+                                                   └─────────────────────────┘                    │   • Parametrized tests  │
+                                                                                                  └────────────┬────────────┘
+                                                                                                               │
+                                                                                                               │
+                                        ╭──────────────────────────────────────────────┬───────────────────────┴──────────────────────╮
+                                        │                                              │                                              │
+                                        │                                              │                                              │
+                                        │                                              │                                              ▼
+                                        │                                              │                                 ┌─────────────────────────┐
+                                        │                                              ▼                                 │   PYDANTIC REFACTOR     │
+                                        ▼                                 ┌─────────────────────────┐                    │      ✅ Complete        │
+                           ┌─────────────────────────┐                    │        PoC 12           │                    │                         │
+                           │        PoC 11           │                    │    MILESTONES DB        │                    │ Models Created          │
+                           │      DEV ACTIVITY       │                    │      ✅ Complete        │                    │   • Project             │
+                           │      ✅ Complete        │                    │                         │                    │   • ProjectSummary      │
+                           │                         │                    │ Database                │                    │   • ToolResponse[T]     │
+                           │ Field                   │                    │   • milestones table    │                    │   • ErrorDetail         │
+                           │   • dev_updated_at      │                    │   • RLS policies        │                    │                         │
+                           │                         │                    │   • CASCADE DELETE      │                    │ Enums                   │
+                           │ Updated                 │                    │                         │                    │   • ProjectStatus       │
+                           │   • Project model       │                    │ Models                  │                    │   • Priority            │
+                           │   • ProjectSummary      │                    │   • Milestone           │                    │                         │
+                           │   • list_projects       │                    │   • MilestoneSummary    │                    │ Benefits                │
+                           │   • update_project      │                    │   • ActionableMilestone │                    │   • Type safety         │
+                           └─────────────────────────┘                    └────────────┬────────────┘                    │   • Auto validation     │
+                                                                                       │                                 │   • IDE autocomplete    │
+                                                                                       │                                 │   • Self-documenting    │
+                                                                                       │                                 └─────────────────────────┘
+                                                                                       │
+                                                                                       │
+                                                                                       │
+                                                                                       │
+                                                                                       │
+                                                                                       ▼
+                                                                          ┌─────────────────────────┐
+                                                                          │        PoC 13           │
+                                                                          │   MILESTONE TOOLS       │
+                                                                          │      ✅ Complete        │
+                                                                          │                         │
+                                                                          │ CRUD Tools              │
+                                                                          │   • list_milestones     │
+                                                                          │   • get_milestone       │
+                                                                          │   • create_milestone    │
+                                                                          │   • update_milestone    │
+                                                                          │                         │
+                                                                          │ Workflow Tools          │
+                                                                          │   • complete_milestone  │
+                                                                          │   • get_next_actions    │
+                                                                          └─────────────────────────┘
 ```
 
 *This is the actual visual milestone from Mission Control, rendered by visualflow from [docs/visual-tasks.json](docs/visual-tasks.json).*
