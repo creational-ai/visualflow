@@ -60,8 +60,8 @@ def render_dag(
         if rendered:
             rendered_parts.append(rendered)
 
-    # Join with blank line separator
-    return "\n".join(rendered_parts)
+    # Join with blank line separator, strip leading newlines from final output
+    return "\n".join(rendered_parts).lstrip("\n")
 
 
 def _render_single_dag(
